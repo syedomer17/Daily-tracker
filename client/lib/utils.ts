@@ -26,12 +26,16 @@ export function calculateTimeDiffMinutes(startTime: string, endTime: string): nu
   return endMinutes - startMinutes;
 }
 
-export function getTodayDateString(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+export const APP_TIME_ZONE = "Asia/Kolkata";
+
+/** Today's date (YYYY-MM-DD) in Asia/Kolkata, regardless of the device timezone. */
+export function getTodayDateString(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: APP_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
 }
 
 export function getDaysUntilJuly2027(): {

@@ -21,8 +21,7 @@ interface HeaderProps {
 }
 
 export function Header({ onOpenMobileSidebar }: HeaderProps) {
-  const [, setMounted] = useState(false);
-  const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  const [currentTime, setCurrentTime] = useState<Date | null>(() => new Date());
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "synced" | "offline">("idle");
   const [syncMsg, setSyncMsg] = useState<string>("Local Storage Active");
@@ -36,8 +35,6 @@ export function Header({ onOpenMobileSidebar }: HeaderProps) {
 
   // Live Clock effect
   useEffect(() => {
-    setMounted(true);
-    setCurrentTime(new Date());
     const interval = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);

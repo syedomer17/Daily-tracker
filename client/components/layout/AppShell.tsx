@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { useTrackerStore } from "@/lib/store";
@@ -8,12 +8,16 @@ import { useTrackerStore } from "@/lib/store";
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  // false on the server, true on the client: avoids a hydration mismatch without a setState-in-effect
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   const theme = useTrackerStore((s) => s.theme);
 
   useEffect(() => {
-    setMounted(true);
     if (theme === "dark") {
       document.documentElement.classList.add("dark");
     } else {

@@ -9,15 +9,12 @@ import {
   DailyReview,
   Milestone,
   WeeklyGoal,
-  DailyAnalyticsRecord,
 } from "@/types";
 import {
   COLLEGE_DAY_TIMETABLE,
   NO_COLLEGE_DAY_TIMETABLE,
   INITIAL_MILESTONES,
   INITIAL_WEEKLY_GOALS,
-  MOCK_PAST_7_DAYS_ANALYTICS,
-  MOCK_90_DAYS_HABITS,
 } from "@/data/timetable";
 import { getTodayDateString } from "@/lib/utils";
 
@@ -50,9 +47,6 @@ interface TrackerState {
   // Daily Reviews
   dailyReviews: DailyReview[];
 
-  // Analytics History
-  analyticsHistory: DailyAnalyticsRecord[];
-
   // Focus Timer
   focusTimer: {
     activeBlockId: string | null;
@@ -60,7 +54,9 @@ interface TrackerState {
     remainingSeconds: number;
     initialSeconds: number;
     mode: "countdown" | "stopwatch";
+    endsAt: number | null; // epoch ms while running; timer derives remaining time from this
   };
+  deepWorkDate: string;
 
   // Simulated Time (for previewing active blocks at any hour)
   simulatedTime: string | null; // e.g. "10:15" or null for live clock
@@ -123,8 +119,8 @@ interface TrackerState {
 }
 
 const DEFAULT_SALAH_STATUS: SalahStatus = {
-  fajr: true,
-  dhuhr: true,
+  fajr: false,
+  dhuhr: false,
   asr: false,
   maghrib: false,
   isha: false,
@@ -149,41 +145,25 @@ export const useTrackerStore = create<TrackerState>()(
         [`${getTodayDateString()}_cd-7`]: true,
       },
 
-      salahRecords: {
-        [getTodayDateString()]: DEFAULT_SALAH_STATUS,
-      },
+      salahRecords: {},
 
-      dsaCount: 84,
-      sqlCount: 62,
-      deepWorkMinutesToday: 240, // 4 hours
+      dsaCount: 0,
+      sqlCount: 0,
+      deepWorkMinutesToday: 0,
+      deepWorkDate: getTodayDateString(),
 
-      habitLogs: MOCK_90_DAYS_HABITS,
+      habitLogs: [],
       weeklyGoals: INITIAL_WEEKLY_GOALS,
       milestones: INITIAL_MILESTONES,
-      dailyReviews: [
-        {
-          id: "rev-sample-1",
-          date: "2026-11-22",
-          githubUpdated: true,
-          githubCommitsCount: 4,
-          wentWell: "Cracked 2 LeetCode Medium problems (Binary Tree Level Order Traversal & Valid BST). Finished Sheryians React routing section.",
-          blockedBy: "Spent 40 mins debugging a CORS issue in Next.js backend proxy.",
-          tomorrowPriority: "Complete college lab practical on time & practice 5 SQL joins before Asr.",
-          tomorrowDayType: "college",
-          moodScore: 5,
-          energyScore: 4,
-          createdAt: new Date(2026, 10, 22, 21, 30).toISOString(),
-        },
-      ],
-
-      analyticsHistory: MOCK_PAST_7_DAYS_ANALYTICS,
+      dailyReviews: [],
 
       focusTimer: {
-        activeBlockId: "cd-7",
+        activeBlockId: null,
         isRunning: false,
         remainingSeconds: 25 * 60,
         initialSeconds: 25 * 60,
         mode: "countdown",
+        endsAt: null,
       },
 
       simulatedTime: null,
@@ -417,19 +397,29 @@ export const useTrackerStore = create<TrackerState>()(
             remainingSeconds: durationMinutes * 60,
             initialSeconds: durationMinutes * 60,
             mode: "countdown",
+            endsAt: Date.now() + durationMinutes * 60 * 1000,
           },
         });
       },
 
       pauseFocusTimer: () =>
-        set((state) => ({
-          focusTimer: { ...state.focusTimer, isRunning: false },
-        })),
+        set((state) => {
+          const t = state.focusTimer;
+          if (!t.isRunning || t.endsAt === null) return state;
+          const remaining = Math.max(0, Math.ceil((t.endsAt - Date.now()) / 1000));
+          return {
+            focusTimer: { ...t, isRunning: false, remainingSeconds: remaining, endsAt: null },
+          };
+        }),
 
       resumeFocusTimer: () =>
-        set((state) => ({
-          focusTimer: { ...state.focusTimer, isRunning: true },
-        })),
+        set((state) => {
+          const t = state.focusTimer;
+          if (t.isRunning || t.remainingSeconds <= 0) return state;
+          return {
+            focusTimer: { ...t, isRunning: true, endsAt: Date.now() + t.remainingSeconds * 1000 },
+          };
+        }),
 
       resetFocusTimer: () =>
         set((state) => ({
@@ -437,39 +427,50 @@ export const useTrackerStore = create<TrackerState>()(
             ...state.focusTimer,
             isRunning: false,
             remainingSeconds: state.focusTimer.initialSeconds,
+            endsAt: null,
           },
         })),
 
+      // Derives remaining time from a wall-clock timestamp, so it stays correct
+      // when the tab is throttled or in the background.
       tickFocusTimer: () =>
         set((state) => {
-          if (!state.focusTimer.isRunning) return state;
-          if (state.focusTimer.remainingSeconds <= 1) {
-            // Timer completed: add 25 min to deep work if tech/deen
+          const today = getTodayDateString();
+          const rolledOver = today !== state.todayDate || today !== state.deepWorkDate;
+          const base = rolledOver
+            ? { todayDate: today, deepWorkMinutesToday: 0, deepWorkDate: today }
+            : {};
+
+          const t = state.focusTimer;
+          if (!t.isRunning || t.endsAt === null) {
+            return rolledOver ? base : state;
+          }
+          const remaining = Math.max(0, Math.ceil((t.endsAt - Date.now()) / 1000));
+          if (remaining <= 0) {
+            const minutes = Math.round(t.initialSeconds / 60);
+            const baseMinutes = rolledOver ? 0 : state.deepWorkMinutesToday;
             return {
-              focusTimer: {
-                ...state.focusTimer,
-                isRunning: false,
-                remainingSeconds: 0,
-              },
-              deepWorkMinutesToday: state.deepWorkMinutesToday + 25,
+              ...base,
+              focusTimer: { ...t, isRunning: false, remainingSeconds: 0, endsAt: null },
+              deepWorkMinutesToday: baseMinutes + minutes,
             };
           }
-          return {
-            focusTimer: {
-              ...state.focusTimer,
-              remainingSeconds: state.focusTimer.remainingSeconds - 1,
-            },
-          };
+          if (remaining === t.remainingSeconds && !rolledOver) return state;
+          return { ...base, focusTimer: { ...t, remainingSeconds: remaining } };
         }),
 
       addFiveMinutes: () =>
-        set((state) => ({
-          focusTimer: {
-            ...state.focusTimer,
-            remainingSeconds: state.focusTimer.remainingSeconds + 300,
-            initialSeconds: state.focusTimer.initialSeconds + 300,
-          },
-        })),
+        set((state) => {
+          const t = state.focusTimer;
+          return {
+            focusTimer: {
+              ...t,
+              remainingSeconds: t.remainingSeconds + 300,
+              initialSeconds: t.initialSeconds + 300,
+              endsAt: t.isRunning && t.endsAt !== null ? t.endsAt + 300 * 1000 : t.endsAt,
+            },
+          };
+        }),
 
       setSimulatedTime: (time) => set({ simulatedTime: time }),
 
@@ -529,7 +530,7 @@ export const useTrackerStore = create<TrackerState>()(
       },
     }),
     {
-      name: "deen-dunya-storage-v1",
+      name: "deen-dunya-storage-v2",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         dayType: state.dayType,
@@ -541,6 +542,7 @@ export const useTrackerStore = create<TrackerState>()(
         dsaCount: state.dsaCount,
         sqlCount: state.sqlCount,
         deepWorkMinutesToday: state.deepWorkMinutesToday,
+        deepWorkDate: state.deepWorkDate,
         habitLogs: state.habitLogs,
         weeklyGoals: state.weeklyGoals,
         milestones: state.milestones,

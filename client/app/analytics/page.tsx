@@ -16,6 +16,7 @@ import {
 } from "recharts";
 import { BarChart3, TrendingUp, Sparkles, Brain, CheckCircle2, ShieldCheck } from "lucide-react";
 import { useTrackerStore } from "@/lib/store";
+import { buildRecentAnalytics } from "@/lib/analytics";
 
 interface CustomTooltipProps {
   active?: boolean;
@@ -76,7 +77,15 @@ function ConsistencyLineTooltip({ active, payload, label }: CustomTooltipProps) 
 }
 
 export default function AnalyticsPage() {
-  const analyticsHistory = useTrackerStore((s) => s.analyticsHistory);
+  const collegeTimetable = useTrackerStore((s) => s.collegeTimetable);
+  const noCollegeTimetable = useTrackerStore((s) => s.noCollegeTimetable);
+  const completedBlocks = useTrackerStore((s) => s.completedBlocks);
+  const salahRecords = useTrackerStore((s) => s.salahRecords);
+  const habitLogs = useTrackerStore((s) => s.habitLogs);
+  const analyticsHistory = useMemo(
+    () => buildRecentAnalytics({ collegeTimetable, noCollegeTimetable, completedBlocks, salahRecords, habitLogs }),
+    [collegeTimetable, noCollegeTimetable, completedBlocks, salahRecords, habitLogs]
+  );
   const dsaCount = useTrackerStore((s) => s.dsaCount);
   const sqlCount = useTrackerStore((s) => s.sqlCount);
 

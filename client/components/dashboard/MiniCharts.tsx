@@ -13,6 +13,7 @@ import {
   Cell,
 } from "recharts";
 import { useTrackerStore } from "@/lib/store";
+import { buildRecentAnalytics } from "@/lib/analytics";
 import { Moon, Laptop, Compass, Sparkles } from "lucide-react";
 
 interface CustomTooltipProps {
@@ -60,10 +61,16 @@ function MiniPieTooltip({ active, payload }: CustomTooltipProps) {
 }
 
 export function MiniCharts() {
-  const analyticsHistory = useTrackerStore((s) => s.analyticsHistory);
   const dayType = useTrackerStore((s) => s.dayType);
   const collegeTimetable = useTrackerStore((s) => s.collegeTimetable);
   const noCollegeTimetable = useTrackerStore((s) => s.noCollegeTimetable);
+  const completedBlocks = useTrackerStore((s) => s.completedBlocks);
+  const salahRecords = useTrackerStore((s) => s.salahRecords);
+  const habitLogs = useTrackerStore((s) => s.habitLogs);
+  const analyticsHistory = useMemo(
+    () => buildRecentAnalytics({ collegeTimetable, noCollegeTimetable, completedBlocks, salahRecords, habitLogs }),
+    [collegeTimetable, noCollegeTimetable, completedBlocks, salahRecords, habitLogs]
+  );
 
   const timetable = useMemo(
     () => (dayType === "college" ? collegeTimetable : noCollegeTimetable),

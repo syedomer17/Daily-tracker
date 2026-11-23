@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 import { Category, TimeBlock, DayType } from "@/types";
 import { CATEGORY_CONFIG } from "@/lib/utils";
@@ -13,35 +13,16 @@ interface TimetableModalProps {
   onSave: (block: Omit<TimeBlock, "id"> | TimeBlock) => void;
 }
 
-export function TimetableModal({
-  isOpen,
+function TimetableForm({
   onClose,
   editingBlock,
   onSave,
 }: TimetableModalProps) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("10:00");
-  const [category, setCategory] = useState<Category>("tech");
-
-  useEffect(() => {
-    if (editingBlock) {
-      setTitle(editingBlock.title);
-      setDescription(editingBlock.description);
-      setStartTime(editingBlock.startTime);
-      setEndTime(editingBlock.endTime);
-      setCategory(editingBlock.category);
-    } else {
-      setTitle("");
-      setDescription("");
-      setStartTime("09:00");
-      setEndTime("10:00");
-      setCategory("tech");
-    }
-  }, [editingBlock, isOpen]);
-
-  if (!isOpen) return null;
+  const [title, setTitle] = useState(editingBlock?.title ?? "");
+  const [description, setDescription] = useState(editingBlock?.description ?? "");
+  const [startTime, setStartTime] = useState(editingBlock?.startTime ?? "09:00");
+  const [endTime, setEndTime] = useState(editingBlock?.endTime ?? "10:00");
+  const [category, setCategory] = useState<Category>(editingBlock?.category ?? "tech");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,4 +154,10 @@ export function TimetableModal({
       </div>
     </div>
   );
+}
+
+export function TimetableModal(props: TimetableModalProps) {
+  if (!props.isOpen) return null;
+  // key remounts the form so its state resets for each add/edit
+  return <TimetableForm key={props.editingBlock?.id ?? "new"} {...props} />;
 }
