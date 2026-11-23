@@ -99,30 +99,30 @@ export function Sidebar({
       {/* Sidebar Container */}
       <aside
         className={cn(
-          "fixed top-0 bottom-0 left-0 z-50 flex flex-col border-r border-zinc-800 bg-zinc-950/95 backdrop-blur transition-all duration-300 lg:static",
+          "fixed top-0 bottom-0 left-0 z-50 flex flex-col border-r border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur transition-all duration-300 lg:static shadow-sm",
           collapsed ? "w-20" : "w-64",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
         {/* Brand Header */}
-        <div className="flex h-16 items-center justify-between border-b border-zinc-800 px-4">
+        <div className="flex h-16 items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-4 transition-colors">
           <Link
             href="/"
             onClick={onCloseMobile}
             className="flex items-center gap-3 overflow-hidden text-left"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 via-teal-500 to-blue-600 shadow-md shadow-emerald-950/50 text-white">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 via-teal-500 to-blue-600 shadow-md shadow-emerald-950/30 text-white">
               <Compass className="h-5 w-5 animate-subtle-pulse" />
             </div>
             {!collapsed && (
               <div className="flex flex-col truncate">
-                <span className="font-bold tracking-tight text-white flex items-center gap-1.5 text-sm">
+                <span className="font-bold tracking-tight text-zinc-900 dark:text-white flex items-center gap-1.5 text-sm">
                   Deen & Dunya
-                  <span className="rounded bg-emerald-500/20 px-1 py-0.2 text-[10px] font-semibold text-emerald-400 border border-emerald-500/30">
+                  <span className="rounded bg-emerald-500/20 px-1 py-0.2 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
                     Pro
                   </span>
                 </span>
-                <span className="text-[11px] text-zinc-400 truncate">
+                <span className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
                   Tech Career & Akhirah
                 </span>
               </div>
@@ -133,7 +133,7 @@ export function Sidebar({
           <button
             onClick={onToggleCollapse}
             aria-label="Toggle sidebar"
-            className="hidden lg:flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:bg-zinc-800 hover:text-white transition"
+            className="hidden lg:flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900/60 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white transition"
           >
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </button>
@@ -141,27 +141,27 @@ export function Sidebar({
 
         {/* Schedule Mode Pill in Sidebar */}
         {!collapsed && (
-          <div className="mx-3 mt-3 rounded-xl border border-zinc-800/80 bg-zinc-900/50 p-2.5">
-            <div className="flex items-center justify-between text-xs text-zinc-400 mb-1">
+          <div className="mx-3 mt-3 rounded-xl border border-zinc-200 dark:border-zinc-800/80 bg-zinc-50 dark:bg-zinc-900/50 p-2.5 transition-colors">
+            <div className="flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400 mb-1">
               <span>Today&apos;s Schedule</span>
-              <span className="font-medium text-emerald-400">{completionPercent}% Done</span>
+              <span className="font-medium text-emerald-600 dark:text-emerald-400">{completionPercent}% Done</span>
             </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-800">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
               <div
                 className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500"
                 style={{ width: `${completionPercent}%` }}
               />
             </div>
             <div className="mt-2 flex items-center justify-between text-[11px]">
-              <span className="flex items-center gap-1 text-zinc-300">
+              <span className="flex items-center gap-1 text-zinc-700 dark:text-zinc-300">
                 {dayType === "college" ? (
-                  <GraduationCap className="h-3.5 w-3.5 text-amber-400" />
+                  <GraduationCap className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
                 ) : (
-                  <Code2 className="h-3.5 w-3.5 text-blue-400" />
+                  <Code2 className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
                 )}
                 {dayType === "college" ? "College Day" : "No College Day"}
               </span>
-              <span className="text-zinc-500">DSA: {dsaCount}/150</span>
+              <span className="text-zinc-500 dark:text-zinc-400 font-mono">DSA: {dsaCount}/150</span>
             </div>
           </div>
         )}
@@ -180,15 +180,15 @@ export function Sidebar({
                 className={cn(
                   "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
                   isActive
-                    ? "bg-zinc-800 text-emerald-400 border border-emerald-500/30 shadow-sm shadow-emerald-950/20"
-                    : "text-zinc-400 hover:bg-zinc-900/80 hover:text-zinc-100"
+                    ? "bg-zinc-100 dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 shadow-sm shadow-emerald-950/10"
+                    : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900/80 hover:text-zinc-900 dark:hover:text-zinc-100"
                 )}
                 title={collapsed ? item.name : undefined}
               >
                 <Icon
                   className={cn(
                     "h-5 w-5 shrink-0 transition-colors",
-                    isActive ? "text-emerald-400" : "text-zinc-400 group-hover:text-zinc-200"
+                    isActive ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-200"
                   )}
                 />
                 {!collapsed && (
@@ -199,8 +199,8 @@ export function Sidebar({
                         className={cn(
                           "rounded-md px-1.5 py-0.5 text-[10px] font-semibold border",
                           isActive
-                            ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
-                            : "bg-zinc-800/80 text-zinc-400 border-zinc-700/60"
+                            ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40"
+                            : "bg-zinc-100 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700/60"
                         )}
                       >
                         {item.badge}
@@ -215,35 +215,35 @@ export function Sidebar({
 
         {/* Bottom Categories Legend */}
         {!collapsed ? (
-          <div className="border-t border-zinc-800/80 p-3 space-y-2">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 px-1">
+          <div className="border-t border-zinc-200 dark:border-zinc-800/80 p-3 space-y-2 transition-colors">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 px-1">
               Category Schema
             </span>
             <div className="grid grid-cols-2 gap-1.5 text-[11px]">
-              <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-emerald-400">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-emerald-700 dark:text-emerald-400">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
                 <span>Deen</span>
               </div>
-              <div className="flex items-center gap-1.5 rounded-lg border border-blue-500/20 bg-blue-500/10 px-2 py-1 text-blue-400">
-                <span className="h-2 w-2 rounded-full bg-blue-400" />
+              <div className="flex items-center gap-1.5 rounded-lg border border-blue-500/20 bg-blue-500/10 px-2 py-1 text-blue-700 dark:text-blue-400">
+                <span className="h-2 w-2 rounded-full bg-blue-500" />
                 <span>Tech</span>
               </div>
-              <div className="flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-amber-400">
-                <span className="h-2 w-2 rounded-full bg-amber-400" />
+              <div className="flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-amber-700 dark:text-amber-400">
+                <span className="h-2 w-2 rounded-full bg-amber-500" />
                 <span>College</span>
               </div>
-              <div className="flex items-center gap-1.5 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2 py-1 text-rose-400">
-                <span className="h-2 w-2 rounded-full bg-rose-400" />
+              <div className="flex items-center gap-1.5 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2 py-1 text-rose-700 dark:text-rose-400">
+                <span className="h-2 w-2 rounded-full bg-rose-500" />
                 <span>Health</span>
               </div>
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-2 border-t border-zinc-800 p-3">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" title="Deen" />
-            <span className="h-2.5 w-2.5 rounded-full bg-blue-400" title="Tech" />
-            <span className="h-2.5 w-2.5 rounded-full bg-amber-400" title="College" />
-            <span className="h-2.5 w-2.5 rounded-full bg-rose-400" title="Health" />
+          <div className="flex flex-col items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 p-3">
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" title="Deen" />
+            <span className="h-2.5 w-2.5 rounded-full bg-blue-500" title="Tech" />
+            <span className="h-2.5 w-2.5 rounded-full bg-amber-500" title="College" />
+            <span className="h-2.5 w-2.5 rounded-full bg-rose-500" title="Health" />
           </div>
         )}
       </aside>

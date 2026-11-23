@@ -1,19 +1,22 @@
 import { NextResponse } from "next/server";
-import clientPromise, { isMongoConnected } from "@/lib/mongodb";
+import { getDb, isMongoConnected } from "@/lib/mongodb";
 
 export async function GET() {
   try {
     const isConnected = await isMongoConnected();
-    if (!isConnected || !clientPromise) {
+    if (!isConnected) {
       return NextResponse.json({
         status: "offline",
-        message: "MongoDB running in local mode (Set MONGODB_URI to enable cloud persistence). LocalStorage is active.",
+        message: "MongoDB offline or connecting. LocalStorage active.",
         connected: false,
       });
     }
 
-    const client = await clientPromise;
-    const db = client.db("deen_dunya_tracker");
+    const db = await getDb();
+    if (!db) {
+      return NextResponse.json({ status: "offline", connected: false });
+    }
+
     const syncDoc = await db.collection("app_state").findOne({ key: "current_user_state" });
 
     return NextResponse.json({
@@ -36,17 +39,18 @@ export async function POST(req: Request) {
     const body = await req.json();
     const isConnected = await isMongoConnected();
 
-    if (!isConnected || !clientPromise) {
+    if (!isConnected) {
       return NextResponse.json({
         status: "local_only",
-        message: "Saved locally. Configure MONGODB_URI in .env.local to persist across devices.",
+        message: "Operating in local storage mode.",
         connected: false,
-        receivedBytes: JSON.stringify(body).length,
       });
     }
 
-    const client = await clientPromise;
-    const db = client.db("deen_dunya_tracker");
+    const db = await getDb();
+    if (!db) {
+      return NextResponse.json({ status: "local_only", connected: false });
+    }
 
     await db.collection("app_state").updateOne(
       { key: "current_user_state" },
@@ -62,7 +66,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       status: "synced",
-      message: "Synced successfully with MongoDB Atlas!",
+      message: "Synced with MongoDB Atlas (dail-tracking)!",
       connected: true,
       timestamp: new Date().toISOString(),
     });

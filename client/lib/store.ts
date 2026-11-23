@@ -116,6 +116,9 @@ interface TrackerState {
   getCompletionPercentage: (date?: string) => number;
   getSalahForDate: (date?: string) => SalahStatus;
   getDeenDunyaSplit: () => { deenHours: number; dunyaHours: number; deenPercent: number; dunyaPercent: number };
+
+  // MongoDB Cloud Hydration
+  hydrateFromCloud: (data: Partial<TrackerState>) => void;
 }
 
 const DEFAULT_SALAH_STATUS: SalahStatus = {
@@ -135,15 +138,7 @@ export const useTrackerStore = create<TrackerState>()(
 
       collegeTimetable: COLLEGE_DAY_TIMETABLE,
       noCollegeTimetable: NO_COLLEGE_DAY_TIMETABLE,
-      completedBlocks: {
-        [`${getTodayDateString()}_cd-1`]: true,
-        [`${getTodayDateString()}_cd-2`]: true,
-        [`${getTodayDateString()}_cd-3`]: true,
-        [`${getTodayDateString()}_cd-4`]: true,
-        [`${getTodayDateString()}_cd-5`]: true,
-        [`${getTodayDateString()}_cd-6`]: true,
-        [`${getTodayDateString()}_cd-7`]: true,
-      },
+      completedBlocks: {},
 
       salahRecords: {},
 
@@ -528,9 +523,25 @@ export const useTrackerStore = create<TrackerState>()(
           dunyaPercent,
         };
       },
+
+      hydrateFromCloud: (cloudData) => {
+        set((state) => ({
+          ...state,
+          ...(cloudData.dayType ? { dayType: cloudData.dayType } : {}),
+          ...(cloudData.dsaCount !== undefined ? { dsaCount: cloudData.dsaCount } : {}),
+          ...(cloudData.sqlCount !== undefined ? { sqlCount: cloudData.sqlCount } : {}),
+          ...(cloudData.deepWorkMinutesToday !== undefined ? { deepWorkMinutesToday: cloudData.deepWorkMinutesToday } : {}),
+          ...(cloudData.completedBlocks ? { completedBlocks: cloudData.completedBlocks } : {}),
+          ...(cloudData.salahRecords ? { salahRecords: cloudData.salahRecords } : {}),
+          ...(cloudData.habitLogs ? { habitLogs: cloudData.habitLogs } : {}),
+          ...(cloudData.dailyReviews ? { dailyReviews: cloudData.dailyReviews } : {}),
+          ...(cloudData.weeklyGoals ? { weeklyGoals: cloudData.weeklyGoals } : {}),
+          ...(cloudData.milestones ? { milestones: cloudData.milestones } : {}),
+        }));
+      },
     }),
     {
-      name: "deen-dunya-storage-v2",
+      name: "deen-dunya-storage-v3",
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         dayType: state.dayType,

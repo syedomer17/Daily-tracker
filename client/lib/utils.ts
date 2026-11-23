@@ -104,3 +104,63 @@ export const CATEGORY_CONFIG = {
     iconName: "HeartPulse",
   },
 } as const;
+
+export function calculateCurrentStreak(
+  habitLogs: Array<{ date: string; completionRate: number }>,
+  salahRecords: Record<string, Record<string, boolean>>,
+  completedBlocks: Record<string, boolean>
+): number {
+  const isDateActive = (dStr: string) => {
+    // 1. habit logs
+    const habit = habitLogs.find((h) => h.date === dStr);
+    if (habit && habit.completionRate > 0) return true;
+    // 2. salah
+    const salah = salahRecords[dStr];
+    if (salah && Object.values(salah).some(Boolean)) return true;
+    // 3. completed blocks
+    for (const [key, val] of Object.entries(completedBlocks)) {
+      if (val && key.startsWith(`${dStr}_`)) return true;
+    }
+    return false;
+  };
+
+  const now = new Date();
+  let streak = 0;
+  const todayStr = getTodayDateString(now);
+  const todayActive = isDateActive(todayStr);
+
+  if (todayActive) {
+    streak = 1;
+    let dayOffset = 1;
+    while (dayOffset < 365) {
+      const pastDate = new Date(now.getTime() - dayOffset * 86_400_000);
+      const pastStr = getTodayDateString(pastDate);
+      if (isDateActive(pastStr)) {
+        streak++;
+        dayOffset++;
+      } else {
+        break;
+      }
+    }
+  } else {
+    // If today is not active yet, check if yesterday was active to keep streak alive
+    const yesterdayDate = new Date(now.getTime() - 86_400_000);
+    const yesterdayStr = getTodayDateString(yesterdayDate);
+    if (isDateActive(yesterdayStr)) {
+      streak = 1;
+      let dayOffset = 2;
+      while (dayOffset < 365) {
+        const pastDate = new Date(now.getTime() - dayOffset * 86_400_000);
+        const pastStr = getTodayDateString(pastDate);
+        if (isDateActive(pastStr)) {
+          streak++;
+          dayOffset++;
+        } else {
+          break;
+        }
+      }
+    }
+  }
+
+  return streak;
+}
