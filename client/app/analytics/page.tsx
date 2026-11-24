@@ -1,289 +1,372 @@
 "use client";
 
-import { useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  AreaChart,
-  Area,
+  BarChart3,
+  Calendar,
+  Download,
+  FileSpreadsheet,
+  FileText,
   LineChart,
-  Line,
-  CartesianGrid,
-} from "recharts";
-import { BarChart3, TrendingUp, Sparkles, Brain, CheckCircle2, ShieldCheck } from "lucide-react";
+  Sparkles,
+  Target,
+  Trophy,
+} from "lucide-react";
 import { useTrackerStore } from "@/lib/store";
-import { buildRecentAnalytics } from "@/lib/analytics";
+import {
+  aggregateDateRange,
+  getPlannedVsActual,
+  getMissedTasksAnalysis,
+} from "@/lib/analytics";
+import {
+  exportDailyRecordsToCsv,
+  exportAnalyticsToJson,
+} from "@/lib/export";
+import {
+  getYesterdayDateString,
+  lastNDates,
+  formatDisplayDate,
+} from "@/lib/utils";
 
-interface CustomTooltipProps {
-  active?: boolean;
-  payload?: Array<{
-    name?: string;
-    value?: number | string;
-    color?: string;
-    dataKey?: string | number;
-    unit?: string;
-  }>;
-  label?: string;
-}
+import { AnalyticsKpiCards } from "@/components/analytics/AnalyticsKpiCards";
+import { ProductivityCharts } from "@/components/analytics/ProductivityCharts";
+import { ReportsView } from "@/components/analytics/ReportsView";
+import { MissedTasksDiagnostics } from "@/components/analytics/MissedTasksDiagnostics";
+import { CareerRoadmapSection } from "@/components/analytics/CareerRoadmapSection";
 
-function StackedBarTooltip({ active, payload, label }: CustomTooltipProps) {
-  if (active && payload && payload.length) {
-    return (
-      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-3 shadow-xl text-xs space-y-1">
-        <p className="font-bold text-zinc-900 dark:text-white mb-1">{label}</p>
-        {payload.map((p) => (
-          <div key={p.dataKey} className="flex items-center justify-between gap-4">
-            <span className="flex items-center gap-1.5" style={{ color: p.color }}>
-              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: p.color }} />
-              {p.name}:
-            </span>
-            <span className="font-mono font-bold text-zinc-800 dark:text-zinc-200">{p.value} {p.unit || "hrs"}</span>
-          </div>
-        ))}
-      </div>
-    );
-  }
-  return null;
-}
-
-function GrowthAreaTooltip({ active, payload, label }: CustomTooltipProps) {
-  if (active && payload && payload.length) {
-    return (
-      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-2.5 text-xs text-zinc-900 dark:text-white shadow-xl space-y-1">
-        <p className="font-bold">{label}</p>
-        <p className="text-blue-600 dark:text-blue-400 font-mono">DSA Solved: {payload[0]?.value}</p>
-        <p className="text-emerald-600 dark:text-emerald-400 font-mono">SQL Queries: {payload[1]?.value}</p>
-      </div>
-    );
-  }
-  return null;
-}
-
-function ConsistencyLineTooltip({ active, payload, label }: CustomTooltipProps) {
-  if (active && payload && payload.length) {
-    return (
-      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-2.5 text-xs text-zinc-900 dark:text-white shadow-xl space-y-1">
-        <p className="font-bold">{label}</p>
-        <p className="text-emerald-600 dark:text-emerald-400 font-mono">Salah Adherence: {payload[0]?.value}%</p>
-        <p className="text-indigo-600 dark:text-indigo-400 font-mono">Core Habits Rate: {payload[1]?.value}%</p>
-      </div>
-    );
-  }
-  return null;
-}
+type RangePreset =
+  | "today"
+  | "yesterday"
+  | "last7"
+  | "last14"
+  | "last30"
+  | "thisMonth"
+  | "allTime"
+  | "custom";
 
 export default function AnalyticsPage() {
+  // Stable Store Selectors
+  const todayDate = useTrackerStore((s) => s.todayDate);
+  const dailyRecords = useTrackerStore((s) => s.dailyRecords);
   const collegeTimetable = useTrackerStore((s) => s.collegeTimetable);
   const noCollegeTimetable = useTrackerStore((s) => s.noCollegeTimetable);
-  const completedBlocks = useTrackerStore((s) => s.completedBlocks);
-  const salahRecords = useTrackerStore((s) => s.salahRecords);
-  const habitLogs = useTrackerStore((s) => s.habitLogs);
-  const analyticsHistory = useMemo(
-    () => buildRecentAnalytics({ collegeTimetable, noCollegeTimetable, completedBlocks, salahRecords, habitLogs }),
-    [collegeTimetable, noCollegeTimetable, completedBlocks, salahRecords, habitLogs]
+  const dayTypeByDate = useTrackerStore((s) => s.dayTypeByDate);
+  const weeklyGoals = useTrackerStore((s) => s.weeklyGoals);
+  const milestones = useTrackerStore((s) => s.milestones);
+  const roadmapTargets = useTrackerStore((s) => s.roadmapTargets);
+  const dailyReviews = useTrackerStore((s) => s.dailyReviews);
+  const legacyBaselineDsa = useTrackerStore((s) => s.legacyBaselineDsa);
+  const legacyBaselineSql = useTrackerStore((s) => s.legacyBaselineSql);
+
+  // Store Actions
+  const toggleMilestoneChecklistItem = useTrackerStore((s) => s.toggleMilestoneChecklistItem);
+  const setRoadmapTarget = useTrackerStore((s) => s.setRoadmapTarget);
+  const updateMilestoneTargetDate = useTrackerStore((s) => s.updateMilestoneTargetDate);
+  const addMilestoneChecklistItem = useTrackerStore((s) => s.addMilestoneChecklistItem);
+
+  // Active View Tab
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "charts" | "reports" | "diagnostics" | "roadmap"
+  >("overview");
+
+  // Date Range Filtering
+  const [rangePreset, setRangePreset] = useState<RangePreset>("last7");
+  const [customStartDate, setCustomStartDate] = useState<string>(
+    () => lastNDates(7)[0]
   );
-  const dsaCount = useTrackerStore((s) => s.dsaCount);
-  const sqlCount = useTrackerStore((s) => s.sqlCount);
+  const [customEndDate, setCustomEndDate] = useState<string>(() => todayDate);
 
-  // Cumulative progression data for DSA & SQL
-  const cumulativeData = useMemo(() => {
-    return analyticsHistory.map((item, idx) => ({
-      day: item.dayName,
-      dsa: idx === analyticsHistory.length - 1 ? dsaCount : item.dsaCount,
-      sql: idx === analyticsHistory.length - 1 ? sqlCount : item.sqlCount,
-    }));
-  }, [analyticsHistory, dsaCount, sqlCount]);
+  // Compute effective date range based on preset
+  const { startDate, endDate } = useMemo(() => {
+    switch (rangePreset) {
+      case "today":
+        return { startDate: todayDate, endDate: todayDate };
+      case "yesterday": {
+        const y = getYesterdayDateString(todayDate);
+        return { startDate: y, endDate: y };
+      }
+      case "last7": {
+        const dates = lastNDates(7);
+        return { startDate: dates[0], endDate: dates[dates.length - 1] };
+      }
+      case "last14": {
+        const dates = lastNDates(14);
+        return { startDate: dates[0], endDate: dates[dates.length - 1] };
+      }
+      case "last30": {
+        const dates = lastNDates(30);
+        return { startDate: dates[0], endDate: dates[dates.length - 1] };
+      }
+      case "thisMonth": {
+        const yearMonth = todayDate.slice(0, 7);
+        return { startDate: `${yearMonth}-01`, endDate: todayDate };
+      }
+      case "allTime": {
+        const recordedDates = Object.keys(dailyRecords).sort();
+        const earliest = recordedDates.length > 0 ? recordedDates[0] : todayDate;
+        return { startDate: earliest, endDate: todayDate };
+      }
+      case "custom":
+      default:
+        return {
+          startDate: customStartDate || todayDate,
+          endDate: customEndDate || todayDate,
+        };
+    }
+  }, [rangePreset, todayDate, dailyRecords, customStartDate, customEndDate]);
 
-  // Last 7 days consistency rate
-  const consistencyData = useMemo(() => {
-    return analyticsHistory.map((item) => ({
-      day: item.dayName,
-      habitsRate: Math.round((item.habitsCompleted / 5) * 100),
-      salahRate: Math.round((item.salahCount / 5) * 100),
-    }));
-  }, [analyticsHistory]);
+  // Aggregated Data for the selected range
+  const selectedRangeAgg = useMemo(() => {
+    return aggregateDateRange({
+      dailyRecords,
+      collegeTimetable,
+      noCollegeTimetable,
+      dayTypeByDate,
+      startDate,
+      endDate,
+    });
+  }, [dailyRecords, collegeTimetable, noCollegeTimetable, dayTypeByDate, startDate, endDate]);
 
-  const totalWeeklyTechHours = analyticsHistory.reduce((acc, c) => acc + c.techHours, 0);
-  const totalWeeklyDeenHours = analyticsHistory.reduce((acc, c) => acc + c.deenHours, 0);
-  const totalSalahLogged = analyticsHistory.reduce((acc, c) => acc + c.salahCount, 0);
-  const avgSalahRate = Math.round(
-    (totalSalahLogged / (analyticsHistory.length * 5)) * 100
-  );
+  // Planned vs Actual for the selected range
+  const plannedVsActual = useMemo(() => {
+    return getPlannedVsActual({
+      dailyRecords,
+      collegeTimetable,
+      noCollegeTimetable,
+      dayTypeByDate,
+      startDate,
+      endDate,
+    });
+  }, [dailyRecords, collegeTimetable, noCollegeTimetable, dayTypeByDate, startDate, endDate]);
+
+  // Routine & Missed Tasks Diagnostics
+  const diagnostics = useMemo(() => {
+    return getMissedTasksAnalysis({
+      dailyRecords,
+      collegeTimetable,
+      noCollegeTimetable,
+      dayTypeByDate,
+      startDate,
+      endDate,
+      todayDate,
+    });
+  }, [dailyRecords, collegeTimetable, noCollegeTimetable, dayTypeByDate, startDate, endDate, todayDate]);
+
+  // Export handlers
+  const handleExportCsv = () => {
+    exportDailyRecordsToCsv(dailyRecords);
+  };
+
+  const handleExportJson = () => {
+    const exportPayload = {
+      exportedAt: new Date().toISOString(),
+      userRange: { startDate, endDate },
+      summary: selectedRangeAgg,
+      plannedVsActual,
+      diagnostics,
+      roadmapTargets,
+      dailyRecords,
+    };
+    exportAnalyticsToJson(exportPayload);
+  };
+
+  const lifetimeDsa = useMemo(() => {
+    const sum = Object.values(dailyRecords).reduce((acc, r) => acc + (r.dsaCount || 0), 0);
+    return sum + legacyBaselineDsa;
+  }, [dailyRecords, legacyBaselineDsa]);
+
+  const lifetimeSql = useMemo(() => {
+    const sum = Object.values(dailyRecords).reduce((acc, r) => acc + (r.sqlCount || 0), 0);
+    return sum + legacyBaselineSql;
+  }, [dailyRecords, legacyBaselineSql]);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-5">
+    <div className="space-y-6 pb-12">
+      {/* Header & Export Actions */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
-            <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">Analytics & Performance Reports</h1>
-            <span className="rounded bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-xs text-zinc-600 dark:text-zinc-300 font-mono">
-              7-Day Trends
+            <BarChart3 className="h-5 w-5 text-emerald-500" />
+            <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+              Productivity Analytics & Reports
+            </h1>
+            <span className="rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-xs font-semibold">
+              Live Verified
             </span>
           </div>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-            Data-backed metrics tracking spiritual consistency, coding output, and physical well-being
+            Data-backed metrics tracking spiritual consistency, coding trajectory, deep work, and timetable adherence
           </p>
         </div>
-      </div>
 
-      {/* KPI Highlights */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/80 p-4 shadow-sm">
-          <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 text-xs">
-            <span>Weekly Coding & DSA</span>
-            <Brain className="h-4 w-4 text-blue-500 dark:text-blue-400" />
-          </div>
-          <p className="text-2xl font-black text-zinc-900 dark:text-white font-mono mt-2">{totalWeeklyTechHours.toFixed(1)} hrs</p>
-          <p className="text-[11px] text-blue-600 dark:text-blue-400 mt-1">Deep work logged</p>
-        </div>
-
-        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/80 p-4 shadow-sm">
-          <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 text-xs">
-            <span>Spiritual Focus (Deen)</span>
-            <ShieldCheck className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
-          </div>
-          <p className="text-2xl font-black text-zinc-900 dark:text-white font-mono mt-2">{totalWeeklyDeenHours.toFixed(1)} hrs</p>
-          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1">Namaz, Tahajjud & Qur&apos;an</p>
-        </div>
-
-        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/80 p-4 shadow-sm">
-          <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 text-xs">
-            <span>Salah Adherence Rate</span>
-            <CheckCircle2 className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
-          </div>
-          <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono mt-2">{avgSalahRate}%</p>
-          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">{totalSalahLogged} / 35 prayers on time</p>
-        </div>
-
-        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/80 p-4 shadow-sm">
-          <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 text-xs">
-            <span>Cumulative Practice</span>
-            <TrendingUp className="h-4 w-4 text-amber-500 dark:text-amber-400" />
-          </div>
-          <p className="text-2xl font-black text-amber-600 dark:text-amber-400 font-mono mt-2">{dsaCount + sqlCount}</p>
-          <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-1">{dsaCount} DSA + {sqlCount} SQL</p>
+        {/* Export Data Buttons */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportCsv}
+            className="flex items-center gap-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-850 transition-colors shadow-sm"
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            Export CSV
+          </button>
+          <button
+            onClick={handleExportJson}
+            className="flex items-center gap-1.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-850 transition-colors shadow-sm"
+          >
+            <Download className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+            Export JSON
+          </button>
         </div>
       </div>
 
-      {/* 1. Stacked Bar Chart: Weekly Hours by Category */}
-      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/80 p-5 shadow-sm space-y-3 transition-colors">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
-              Stacked Category Hours Breakdown
-            </h3>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Hours invested daily across Deen, Tech, College, and Restorative Health
-            </p>
-          </div>
-          <div className="flex items-center gap-3 text-[11px] text-zinc-600 dark:text-zinc-400">
-            <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#10b981]" /> Deen</span>
-            <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#3b82f6]" /> Tech</span>
-            <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#f59e0b]" /> College</span>
-            <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-[#f43f5e]" /> Health</span>
-          </div>
+      {/* Date Range Selector Bar */}
+      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        {/* Preset Chips */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 mr-1">
+            Range:
+          </span>
+          {[
+            { id: "today", label: "Today" },
+            { id: "yesterday", label: "Yesterday" },
+            { id: "last7", label: "Last 7 Days" },
+            { id: "last14", label: "Last 14 Days" },
+            { id: "last30", label: "Last 30 Days" },
+            { id: "thisMonth", label: "This Month" },
+            { id: "allTime", label: "All Time" },
+            { id: "custom", label: "Custom" },
+          ].map((preset) => (
+            <button
+              key={preset.id}
+              onClick={() => setRangePreset(preset.id as RangePreset)}
+              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                rangePreset === preset.id
+                  ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-sm"
+                  : "bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+              }`}
+            >
+              {preset.label}
+            </button>
+          ))}
         </div>
 
-        <div className="h-72 w-full pt-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={analyticsHistory} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" className="dark:stroke-zinc-800" vertical={false} />
-              <XAxis dataKey="dayName" stroke="#71717a" fontSize={11} tickLine={false} />
-              <YAxis stroke="#71717a" fontSize={11} tickLine={false} />
-              <Tooltip content={<StackedBarTooltip />} />
-              <Bar dataKey="deenHours" name="Deen" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="techHours" name="Tech" stackId="a" fill="#3b82f6" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="collegeHours" name="College" stackId="a" fill="#f59e0b" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="healthHours" name="Health" stackId="a" fill="#f43f5e" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        {/* Custom Date Inputs or Active Range Display */}
+        {rangePreset === "custom" ? (
+          <div className="flex items-center gap-2 text-xs">
+            <input
+              type="date"
+              value={customStartDate}
+              onChange={(e) => setCustomStartDate(e.target.value)}
+              className="rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-1 font-mono text-zinc-900 dark:text-zinc-100"
+            />
+            <span className="text-zinc-400">to</span>
+            <input
+              type="date"
+              value={customEndDate}
+              onChange={(e) => setCustomEndDate(e.target.value)}
+              className="rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2.5 py-1 font-mono text-zinc-900 dark:text-zinc-100"
+            />
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+            <Calendar className="h-3.5 w-3.5 text-zinc-400" />
+            <span className="font-mono">
+              {formatDisplayDate(startDate)} – {formatDisplayDate(endDate)} ({selectedRangeAgg.daysCount} days)
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* 2. Two Columns: Area Chart (DSA & SQL Progression) + Habit Consistency Rate */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Cumulative DSA & SQL Area Chart */}
-        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/80 p-5 shadow-sm space-y-3 transition-colors">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-blue-500 dark:text-blue-400" />
-                DSA & SQL Growth Curve
-              </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">Cumulative problems solved over time</p>
-            </div>
-            <div className="flex items-center gap-2 text-[11px]">
-              <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400 font-semibold">
-                <span className="h-2 w-2 rounded-full bg-blue-500" /> DSA ({dsaCount}/150)
-              </span>
-              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" /> SQL ({sqlCount}/100)
-              </span>
-            </div>
-          </div>
+      {/* Primary KPI Cards (12 Key Metrics) */}
+      <AnalyticsKpiCards
+        todayDate={todayDate}
+        dailyRecords={dailyRecords}
+        collegeTimetable={collegeTimetable}
+        noCollegeTimetable={noCollegeTimetable}
+        dayTypeByDate={dayTypeByDate}
+        weeklyGoals={weeklyGoals}
+        legacyBaselineDsa={legacyBaselineDsa}
+        legacyBaselineSql={legacyBaselineSql}
+        selectedRangeAgg={selectedRangeAgg}
+      />
 
-          <div className="h-60 w-full pt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={cumulativeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorDsa" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorSql" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" className="dark:stroke-zinc-800" vertical={false} />
-                <XAxis dataKey="day" stroke="#71717a" fontSize={11} tickLine={false} />
-                <YAxis stroke="#71717a" fontSize={11} tickLine={false} />
-                <Tooltip content={<GrowthAreaTooltip />} />
-                <Area type="monotone" dataKey="dsa" name="DSA" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorDsa)" />
-                <Area type="monotone" dataKey="sql" name="SQL" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorSql)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Habit Consistency Rate Line Chart */}
-        <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/80 p-5 shadow-sm space-y-3 transition-colors">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
-                Habit & Salah Consistency %
-              </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">Adherence to daily pillars</p>
-            </div>
-            <div className="flex items-center gap-2 text-[11px]">
-              <span className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">Salah %</span>
-              <span className="text-zinc-400">|</span>
-              <span className="text-indigo-600 dark:text-indigo-400 font-mono font-bold">Habits %</span>
-            </div>
-          </div>
-
-          <div className="h-60 w-full pt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={consistencyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" className="dark:stroke-zinc-800" vertical={false} />
-                <XAxis dataKey="day" stroke="#71717a" fontSize={11} tickLine={false} />
-                <YAxis domain={[0, 100]} stroke="#71717a" fontSize={11} tickLine={false} />
-                <Tooltip content={<ConsistencyLineTooltip />} />
-                <Line type="monotone" dataKey="salahRate" stroke="#10b981" strokeWidth={2.5} dot={{ r: 4 }} />
-                <Line type="monotone" dataKey="habitsRate" stroke="#6366f1" strokeWidth={2.5} dot={{ r: 4 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+      {/* Navigation View Tabs */}
+      <div className="border-b border-zinc-200 dark:border-zinc-800">
+        <nav className="flex space-x-6">
+          {[
+            { id: "overview", label: "Overview & Summary", icon: Sparkles },
+            { id: "charts", label: "Productivity Charts (8)", icon: LineChart },
+            { id: "reports", label: "Executive Reports", icon: FileText },
+            { id: "diagnostics", label: "Routine Diagnostics", icon: Target },
+            { id: "roadmap", label: "July 2027 Roadmap", icon: Trophy },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                className={`flex items-center gap-2 py-3 text-xs font-semibold border-b-2 transition-all ${
+                  isActive
+                    ? "border-emerald-500 text-emerald-600 dark:text-emerald-400"
+                    : "border-transparent text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </nav>
       </div>
+
+      {/* Tab Panels */}
+      {activeTab === "overview" && (
+        <div className="space-y-6">
+          <ProductivityCharts
+            aggregation={selectedRangeAgg}
+            plannedVsActual={plannedVsActual}
+            dailyRecords={dailyRecords}
+          />
+        </div>
+      )}
+
+      {activeTab === "charts" && (
+        <ProductivityCharts
+          aggregation={selectedRangeAgg}
+          plannedVsActual={plannedVsActual}
+          dailyRecords={dailyRecords}
+        />
+      )}
+
+      {activeTab === "reports" && (
+        <ReportsView
+          todayDate={todayDate}
+          dailyRecords={dailyRecords}
+          collegeTimetable={collegeTimetable}
+          noCollegeTimetable={noCollegeTimetable}
+          dailyReviews={dailyReviews}
+          weeklyGoals={weeklyGoals}
+          milestones={milestones}
+          dayTypeByDate={dayTypeByDate}
+        />
+      )}
+
+      {activeTab === "diagnostics" && (
+        <MissedTasksDiagnostics diagnostics={diagnostics} />
+      )}
+
+      {activeTab === "roadmap" && (
+        <CareerRoadmapSection
+          milestones={milestones}
+          lifetimeDsa={lifetimeDsa}
+          lifetimeSql={lifetimeSql}
+          roadmapTargets={roadmapTargets}
+          onToggleChecklistItem={toggleMilestoneChecklistItem}
+          onSetRoadmapTarget={setRoadmapTarget}
+          onUpdateMilestoneTargetDate={updateMilestoneTargetDate}
+          onAddChecklistItem={addMilestoneChecklistItem}
+        />
+      )}
     </div>
   );
 }

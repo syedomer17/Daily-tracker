@@ -45,3 +45,14 @@ body {
 .animate-subtle-pulse {
   animation: subtle-pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* Quote 2-min auto-rotation progress bar */
+@keyframes quote-progress {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+.animate-quote-progress {
+  animation-name: quote-progress;
+  animation-fill-mode: forwards;
+}

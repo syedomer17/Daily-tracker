@@ -14,12 +14,12 @@ import {
   Calendar,
 } from "lucide-react";
 import { useTrackerStore } from "@/lib/store";
-import { HabitLog } from "@/types";
+import { HabitLog, HabitFlags } from "@/types";
 import { getTodayDateString, calculateCurrentStreak, cn } from "@/lib/utils";
 import confetti from "canvas-confetti";
 
 const CORE_HABITS: {
-  key: keyof Omit<HabitLog, "date" | "completionRate" | "notes">;
+  key: keyof HabitFlags;
   title: string;
   subtitle: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -75,6 +75,8 @@ export default function HabitsPage() {
   const salahRecords = useTrackerStore((s) => s.salahRecords);
 
   const todayStr = getTodayDateString();
+  const getDailyRecord = useTrackerStore((s) => s.getDailyRecord);
+  const todayRecord = getDailyRecord(todayStr);
   const [selectedDayLog, setSelectedDayLog] = useState<HabitLog | null>(null);
 
   // Real, accurate streak calculated from activity history
@@ -82,23 +84,30 @@ export default function HabitsPage() {
     return calculateCurrentStreak(habitLogs, salahRecords, completedBlocks);
   }, [habitLogs, salahRecords, completedBlocks]);
 
-  // Today's log (real data starting clean)
+  // Today's log directly from today's record
   const todayLog = useMemo(() => {
-    const existing = habitLogs.find((h) => h.date === todayStr);
-    if (existing) return existing;
+    const habits = todayRecord.habits;
+    const count = [
+      habits.quran,
+      habits.salah5,
+      habits.exercise,
+      habits.deepWork,
+      habits.healthyFoodSleep,
+    ].filter(Boolean).length;
+
     return {
       date: todayStr,
-      quran: false,
-      salah5: false,
-      exercise: false,
-      deepWork: false,
-      healthyFoodSleep: false,
-      completionRate: 0,
+      quran: habits.quran,
+      salah5: habits.salah5,
+      exercise: habits.exercise,
+      deepWork: habits.deepWork,
+      healthyFoodSleep: habits.healthyFoodSleep,
+      completionRate: Math.round((count / 5) * 100),
     };
-  }, [habitLogs, todayStr]);
+  }, [todayRecord.habits, todayStr]);
 
-  const handleToggleToday = (key: keyof Omit<HabitLog, "date" | "completionRate" | "notes">) => {
-    toggleHabit(todayStr, key);
+  const handleToggleToday = (key: keyof HabitFlags) => {
+    toggleHabit(key, todayStr);
     if (!todayLog[key]) {
       confetti({
         particleCount: 40,
@@ -109,15 +118,39 @@ export default function HabitsPage() {
     }
   };
 
-  // 90-day heatmap data (sorted chronologically)
-  const sortedHabits = useMemo(() => {
-    return [...habitLogs].sort((a, b) => a.date.localeCompare(b.date));
+  // Full 90-day heatmap grid ending today (Asia/Kolkata)
+  const last90Days = useMemo(() => {
+    const days: HabitLog[] = [];
+    const recordsMap = new Map<string, HabitLog>();
+    habitLogs.forEach((h) => recordsMap.set(h.date, h));
+
+    const now = new Date();
+    for (let i = 89; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 86400000);
+      const dateStr = d.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+      const existing = recordsMap.get(dateStr);
+      if (existing) {
+        days.push(existing);
+      } else {
+        days.push({
+          date: dateStr,
+          quran: false,
+          salah5: false,
+          exercise: false,
+          deepWork: false,
+          healthyFoodSleep: false,
+          completionRate: 0,
+        });
+      }
+    }
+    return days;
   }, [habitLogs]);
 
   // Overall stats
-  const totalDays = sortedHabits.length;
+  const recordedDays = useMemo(() => habitLogs.filter((h) => h.completionRate > 0), [habitLogs]);
+  const totalDays = recordedDays.length;
   const avgCompletionRate = totalDays
-    ? Math.round(sortedHabits.reduce((acc, curr) => acc + curr.completionRate, 0) / totalDays)
+    ? Math.round(recordedDays.reduce((acc, curr) => acc + curr.completionRate, 0) / totalDays)
     : 0;
 
   const getColorForRate = (rate: number) => {
@@ -253,9 +286,9 @@ export default function HabitsPage() {
 
         {/* Heatmap Grid (Scrollable on small screens) */}
         <div className="overflow-x-auto pb-2">
-          {sortedHabits.length > 0 ? (
+          {last90Days.length > 0 ? (
             <div className="grid grid-flow-col grid-rows-7 gap-1.5 min-w-[700px]">
-              {sortedHabits.map((h) => (
+              {last90Days.map((h) => (
                 <button
                   key={h.date}
                   onClick={() => setSelectedDayLog(h)}
@@ -318,14 +351,14 @@ export default function HabitsPage() {
         <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/80 p-4 shadow-sm">
           <span className="text-xs text-zinc-500 dark:text-zinc-400">Qur&apos;an Recitation Days</span>
           <p className="text-2xl font-black text-zinc-900 dark:text-white font-mono mt-1">
-            {sortedHabits.filter((h) => h.quran).length} Days
+            {habitLogs.filter((h) => h.quran).length} Days
           </p>
           <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-1">Daily 15-20 min connection</p>
         </div>
         <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/80 p-4 shadow-sm">
           <span className="text-xs text-zinc-500 dark:text-zinc-400">Deep Work Sessions</span>
           <p className="text-2xl font-black text-blue-600 dark:text-blue-400 font-mono mt-1">
-            {sortedHabits.filter((h) => h.deepWork).length} Days
+            {habitLogs.filter((h) => h.deepWork).length} Days
           </p>
           <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-1">DSA & Full-Stack Mastery</p>
         </div>

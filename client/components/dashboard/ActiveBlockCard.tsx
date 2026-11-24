@@ -27,6 +27,7 @@ export function ActiveBlockCard() {
   const pauseFocusTimer = useTrackerStore((s) => s.pauseFocusTimer);
   const resumeFocusTimer = useTrackerStore((s) => s.resumeFocusTimer);
   const resetFocusTimer = useTrackerStore((s) => s.resetFocusTimer);
+  const completeFocusSession = useTrackerStore((s) => s.completeFocusSession);
   const addFiveMinutes = useTrackerStore((s) => s.addFiveMinutes);
   const simulatedTime = useTrackerStore((s) => s.simulatedTime);
   const setSimulatedTime = useTrackerStore((s) => s.setSimulatedTime);
@@ -254,8 +255,14 @@ export function ActiveBlockCard() {
             {formattedTimer}
           </div>
 
+          <div className="flex items-center gap-2 text-[11px] text-zinc-500 font-mono">
+            <span>Planned: {Math.round(focusTimer.plannedSeconds / 60)}m</span>
+            <span>&bull;</span>
+            <span>Elapsed: {Math.max(0, Math.round((focusTimer.initialSeconds - focusTimer.remainingSeconds) / 60))}m</span>
+          </div>
+
           {/* Timer Controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap justify-center">
             {focusTimer.isRunning ? (
               <button
                 onClick={pauseFocusTimer}
@@ -268,7 +275,20 @@ export function ActiveBlockCard() {
                 onClick={handleStartTimer}
                 className="flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/20 px-3.5 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/30 transition shadow-sm"
               >
-                <Play className="h-3.5 w-3.5" /> Start 25m
+                <Play className="h-3.5 w-3.5" /> {focusTimer.remainingSeconds < focusTimer.initialSeconds ? "Resume" : "Start 25m"}
+              </button>
+            )}
+
+            {focusTimer.initialSeconds - focusTimer.remainingSeconds > 30 && (
+              <button
+                onClick={() => {
+                  completeFocusSession();
+                  confetti({ particleCount: 50, spread: 60 });
+                }}
+                className="flex items-center gap-1 rounded-xl border border-blue-500/40 bg-blue-500/15 px-3 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-500/25 transition shadow-sm"
+                title="Save elapsed focus minutes to today's deep work record"
+              >
+                Log Session
               </button>
             )}
 

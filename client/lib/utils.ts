@@ -28,6 +28,62 @@ export function calculateTimeDiffMinutes(startTime: string, endTime: string): nu
 
 export const APP_TIME_ZONE = "Asia/Kolkata";
 
+/** Returns current time in 24h format (HH:mm) in Asia/Kolkata */
+export function getCurrentTime24Kolkata(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: APP_TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(now);
+}
+
+/** Returns an ordered array of YYYY-MM-DD dates between startDate and endDate (inclusive) */
+export function getDateRangeArray(startDate: string, endDate: string): string[] {
+  if (!startDate || !endDate) return [];
+  if (startDate > endDate) {
+    const tmp = startDate;
+    startDate = endDate;
+    endDate = tmp;
+  }
+  const dates: string[] = [];
+  let curr = startDate;
+  // Safety guard of at most 730 days (2 years)
+  let count = 0;
+  while (curr <= endDate && count < 730) {
+    dates.push(curr);
+    curr = getTomorrowDateString(curr);
+    count++;
+  }
+  return dates;
+}
+
+/** YYYY-MM-DD strings for the last `days` days (oldest first), in Asia/Kolkata. */
+export function lastNDates(days: number, now: Date = new Date()): string[] {
+  const out: string[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    out.push(getTodayDateString(new Date(now.getTime() - i * 86_400_000)));
+  }
+  return out;
+}
+
+/** Formats YYYY-MM-DD into a human-friendly date string */
+export function formatDisplayDate(dateStr: string): string {
+  if (!dateStr) return "";
+  try {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const date = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+    return new Intl.DateTimeFormat("en-US", {
+      timeZone: APP_TIME_ZONE,
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(date);
+  } catch {
+    return dateStr;
+  }
+}
+
 /** Today's date (YYYY-MM-DD) in Asia/Kolkata, regardless of the device timezone. */
 export function getTodayDateString(now: Date = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", {
@@ -36,6 +92,38 @@ export function getTodayDateString(now: Date = new Date()): string {
     month: "2-digit",
     day: "2-digit",
   }).format(now);
+}
+
+/** Given a YYYY-MM-DD date, returns the next calendar date (YYYY-MM-DD) in Asia/Kolkata */
+export function getTomorrowDateString(dateStr: string = getTodayDateString()): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  // Noon in UTC to prevent any boundary shift
+  const date = new Date(Date.UTC(y, m - 1, d + 1, 12, 0, 0));
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: APP_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+/** Given a YYYY-MM-DD date, returns the previous calendar date (YYYY-MM-DD) in Asia/Kolkata */
+export function getYesterdayDateString(dateStr: string = getTodayDateString()): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d - 1, 12, 0, 0));
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: APP_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+/** Returns day-of-week 0 (Sunday) to 6 (Saturday) for a YYYY-MM-DD date in Asia/Kolkata */
+export function getDayOfWeekKolkata(dateStr: string = getTodayDateString()): number {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d, 6, 0, 0)); // 6:00 UTC = 11:30 AM IST
+  return date.getUTCDay();
 }
 
 export function getDaysUntilJuly2027(): {

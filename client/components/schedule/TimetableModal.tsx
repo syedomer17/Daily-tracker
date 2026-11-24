@@ -5,32 +5,35 @@ import { X } from "lucide-react";
 import { Category, TimeBlock, DayType } from "@/types";
 import { CATEGORY_CONFIG } from "@/lib/utils";
 
-interface TimetableModalProps {
-  isOpen: boolean;
+export interface TimetableModalProps {
+  isOpen?: boolean;
   onClose: () => void;
-  dayType: DayType;
-  editingBlock: TimeBlock | null;
+  dayType?: DayType;
+  editingBlock?: TimeBlock | null;
+  initialData?: TimeBlock | null;
   onSave: (block: Omit<TimeBlock, "id"> | TimeBlock) => void;
 }
 
 function TimetableForm({
   onClose,
   editingBlock,
+  initialData,
   onSave,
 }: TimetableModalProps) {
-  const [title, setTitle] = useState(editingBlock?.title ?? "");
-  const [description, setDescription] = useState(editingBlock?.description ?? "");
-  const [startTime, setStartTime] = useState(editingBlock?.startTime ?? "09:00");
-  const [endTime, setEndTime] = useState(editingBlock?.endTime ?? "10:00");
-  const [category, setCategory] = useState<Category>(editingBlock?.category ?? "tech");
+  const targetBlock = editingBlock ?? initialData ?? null;
+  const [title, setTitle] = useState(targetBlock?.title ?? "");
+  const [description, setDescription] = useState(targetBlock?.description ?? "");
+  const [startTime, setStartTime] = useState(targetBlock?.startTime ?? "09:00");
+  const [endTime, setEndTime] = useState(targetBlock?.endTime ?? "10:00");
+  const [category, setCategory] = useState<Category>(targetBlock?.category ?? "tech");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !startTime || !endTime) return;
 
-    if (editingBlock) {
+    if (targetBlock) {
       onSave({
-        ...editingBlock,
+        ...targetBlock,
         title,
         description,
         startTime,
@@ -147,7 +150,7 @@ function TimetableForm({
               type="submit"
               className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2 text-xs font-bold text-white hover:opacity-95 shadow-md shadow-emerald-950/20"
             >
-              {editingBlock ? "Save Changes" : "Create Block"}
+              {targetBlock ? "Save Changes" : "Create Block"}
             </button>
           </div>
         </form>
@@ -157,7 +160,8 @@ function TimetableForm({
 }
 
 export function TimetableModal(props: TimetableModalProps) {
-  if (!props.isOpen) return null;
+  if (props.isOpen === false) return null;
+  const blockToEdit = props.editingBlock ?? props.initialData ?? null;
   // key remounts the form so its state resets for each add/edit
-  return <TimetableForm key={props.editingBlock?.id ?? "new"} {...props} />;
+  return <TimetableForm key={blockToEdit?.id ?? "new"} {...props} />;
 }

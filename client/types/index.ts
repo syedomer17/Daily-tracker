@@ -23,15 +23,63 @@ export type SalahStatus = {
   isha: boolean;
 };
 
-export interface HabitLog {
+export interface HabitFlags {
+  quran: boolean;
+  salah5: boolean;
+  exercise: boolean;
+  deepWork: boolean;
+  healthyFoodSleep: boolean;
+}
+
+export interface HabitLog extends HabitFlags {
   date: string; // YYYY-MM-DD
-  quran: boolean; // Quran (15-20 min)
-  salah5: boolean; // 5 Salah On Time
-  exercise: boolean; // Exercise / Workout
-  deepWork: boolean; // Deep Work (2-3 hrs)
-  healthyFoodSleep: boolean; // Healthy Food & Sleep
   completionRate: number; // 0 - 100
   notes?: string;
+}
+
+export interface DsaEntry {
+  id: string;
+  name?: string;
+  difficulty?: "Easy" | "Medium" | "Hard";
+  topic?: string;
+  url?: string;
+  timestamp: string;
+}
+
+export interface SqlEntry {
+  id: string;
+  queryName?: string;
+  difficulty?: "Easy" | "Medium" | "Hard";
+  topic?: string;
+  timestamp: string;
+}
+
+export interface DeepWorkSession {
+  id: string;
+  blockId?: string;
+  startTime: string; // ISO string
+  endTime: string;   // ISO string
+  durationMinutes: number;
+  plannedMinutes?: number;
+}
+
+export interface DailyRecord {
+  userId?: string;
+  date: string; // YYYY-MM-DD in Asia/Kolkata
+  dayType: DayType;
+  dsaCount: number;
+  dsaEntries?: DsaEntry[];
+  sqlCount: number;
+  sqlEntries?: SqlEntry[];
+  deepWorkMinutes: number;
+  deepWorkSessions?: DeepWorkSession[];
+  completedBlocks: Record<string, boolean>; // key: blockId
+  salah: SalahStatus;
+  habits: HabitFlags;
+  notes?: string;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface DailyReview {

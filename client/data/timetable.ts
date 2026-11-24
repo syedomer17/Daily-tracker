@@ -463,6 +463,106 @@ export const INSPIRING_QUOTES = [
   {
     text: "Tie your camel first, then put your trust in Allah.",
     author: "Sunan al-Tirmidhi",
-    tag: "Tawakkul & Effort",
+    tag: "Tawakkul & Action",
+  },
+  {
+    text: "The most beloved of deeds to Allah are those that are most consistent, even if they are small.",
+    author: "Sahih al-Bukhari",
+    tag: "Consistency",
+  },
+  {
+    text: "Deep work is the ability to focus without distraction on a cognitively demanding task. It makes you produce at an elite level.",
+    author: "Cal Newport (Deep Work)",
+    tag: "Deep Focus",
+  },
+  {
+    text: "Whoever takes a path upon which he seeks knowledge, Allah makes the path to Paradise easy for him.",
+    author: "Sahih Muslim",
+    tag: "Knowledge",
+  },
+  {
+    text: "If you are grateful, I will surely increase you in favor.",
+    author: "Surah Ibrahim (14:7)",
+    tag: "Gratitude (Shukr)",
+  },
+  {
+    text: "First solve the problem. Then, write the code.",
+    author: "John Johnson",
+    tag: "Problem Solving",
+  },
+  {
+    text: "Take benefit of five before five: your youth before your old age, your health before your sickness, your wealth before your poverty, your free time before you are preoccupied, and your life before your death.",
+    author: "Prophet Muhammad (ﷺ) - Al-Hakim",
+    tag: "Time Management",
+  },
+  {
+    text: "Simplicity is prerequisite for reliability. Great software and noble character are built line by line.",
+    author: "Edsger W. Dijkstra",
+    tag: "Craftsmanship",
+  },
+  {
+    text: "And that there is not for man except that for which he strives, and that his effort is going to be seen.",
+    author: "Surah An-Najm (53:39-40)",
+    tag: "Effort & Striving",
+  },
+  {
+    text: "You do not rise to the level of your goals. You fall to the level of your systems.",
+    author: "James Clear",
+    tag: "Systems Thinking",
+  },
+  {
+    text: "The strong believer is better and more beloved to Allah than the weak believer, while there is good in both. Strive for that which benefits you.",
+    author: "Sahih Muslim",
+    tag: "Strength & Discipline",
+  },
+  {
+    text: "Amateurs sit and wait for inspiration, the rest of us just get up and go to work.",
+    author: "Stephen King",
+    tag: "Discipline",
+  },
+  {
+    text: "O you who have believed, seek help through patience and prayer. Indeed, Allah is with the patient.",
+    author: "Surah Al-Baqarah (2:153)",
+    tag: "Sabr & Salah",
+  },
+  {
+    text: "Small deeds done with purity of intention (Ikhlas) weigh mountains on the scales.",
+    author: "Ibn al-Qayyim",
+    tag: "Intention (Niyyah)",
+  },
+  {
+    text: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.",
+    author: "Will Durant (Philosophy of Excellence)",
+    tag: "Habits",
+  },
+  {
+    text: "Do not let yesterday take up too much of today. If you missed a prayer or a problem yesterday, conquer today.",
+    author: "Mindset Principle",
+    tag: "Resilience",
+  },
+  {
+    text: "Knowledge without action is wastefulness and action without knowledge is foolishness.",
+    author: "Imam Al-Ghazali",
+    tag: "Applied Learning",
+  },
+  {
+    text: "When you feel like quitting, remember why you started: July 2027 high-paying tech career and an honorable life of service.",
+    author: "Career Anchor",
+    tag: "Goal Clarity",
+  },
+  {
+    text: "The best of people are those that bring the most benefit to the rest of mankind.",
+    author: "Prophet Muhammad (ﷺ) - Al-Daraqutni",
+    tag: "Purpose & Service",
+  },
+  {
+    text: "Focus is a muscle. Every time you resist checking your phone during study, your brain rewires for elite mastery.",
+    author: "Neuroscience of Focus",
+    tag: "Dopamine Control",
+  },
+  {
+    text: "And put your trust in the Ever-Living who does not die, and exalt with His praise.",
+    author: "Surah Al-Furqan (25:58)",
+    tag: "Faith & Peace",
   },
 ];

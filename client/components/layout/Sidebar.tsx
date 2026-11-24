@@ -15,9 +15,11 @@ import {
   Compass,
   Code2,
   GraduationCap,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTrackerStore } from "@/lib/store";
+import { useSession, signOut } from "next-auth/react";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -72,6 +74,7 @@ export function Sidebar({
   onCloseMobile,
 }: SidebarProps) {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const todayDate = useTrackerStore((s) => s.todayDate);
   const dayType = useTrackerStore((s) => s.dayType);
   const collegeTimetable = useTrackerStore((s) => s.collegeTimetable);
@@ -213,37 +216,20 @@ export function Sidebar({
           })}
         </nav>
 
-        {/* Bottom Categories Legend */}
-        {!collapsed ? (
-          <div className="border-t border-zinc-200 dark:border-zinc-800/80 p-3 space-y-2 transition-colors">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 px-1">
-              Category Schema
-            </span>
-            <div className="grid grid-cols-2 gap-1.5 text-[11px]">
-              <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-emerald-700 dark:text-emerald-400">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                <span>Deen</span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-lg border border-blue-500/20 bg-blue-500/10 px-2 py-1 text-blue-700 dark:text-blue-400">
-                <span className="h-2 w-2 rounded-full bg-blue-500" />
-                <span>Tech</span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-amber-700 dark:text-amber-400">
-                <span className="h-2 w-2 rounded-full bg-amber-500" />
-                <span>College</span>
-              </div>
-              <div className="flex items-center gap-1.5 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2 py-1 text-rose-700 dark:text-rose-400">
-                <span className="h-2 w-2 rounded-full bg-rose-500" />
-                <span>Health</span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-2 border-t border-zinc-200 dark:border-zinc-800 p-3">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" title="Deen" />
-            <span className="h-2.5 w-2.5 rounded-full bg-blue-500" title="Tech" />
-            <span className="h-2.5 w-2.5 rounded-full bg-amber-500" title="College" />
-            <span className="h-2.5 w-2.5 rounded-full bg-rose-500" title="Health" />
+        {/* Sign Out Button */}
+        {session?.user && (
+          <div className="border-t border-zinc-200 dark:border-zinc-800/80 p-3 transition-colors">
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className={cn(
+                "group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:text-rose-600 dark:hover:text-rose-400 transition-all border border-transparent hover:border-rose-200 dark:hover:border-rose-900/40",
+                collapsed && "justify-center px-0"
+              )}
+              title="Sign out"
+            >
+              <LogOut className="h-4 w-4 shrink-0 transition-colors group-hover:text-rose-600 dark:group-hover:text-rose-400" />
+              {!collapsed && <span>Sign Out</span>}
+            </button>
           </div>
         )}
       </aside>

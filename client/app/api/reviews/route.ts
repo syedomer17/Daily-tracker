@@ -1,60 +1,113 @@
 import { NextResponse } from "next/server";
-import clientPromise, { isMongoConnected } from "@/lib/mongodb";
+import { getDb, isMongoConnected } from "@/lib/mongodb";
+import { getAuthenticatedUser, apiError, apiSuccess, checkPayloadSize } from "@/lib/auth-helpers";
+import { ReviewPayloadSchema } from "@/lib/validations";
 
 export async function GET() {
   try {
+    // 1. Verify authentication server-side
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return apiError(401, "Authentication required to view reviews");
+    }
+
+    // 2. Check database connectivity
     const isConnected = await isMongoConnected();
-    if (!isConnected || !clientPromise) {
+    if (!isConnected) {
       return NextResponse.json({
+        success: true,
         connected: false,
         reviews: [],
-        message: "Operating in local storage mode",
+        message: "Operating in local mode",
       });
     }
 
-    const client = await clientPromise;
-    const db = client.db("deen_dunya_tracker");
-    const reviews = await db.collection("reviews").find().sort({ date: -1 }).toArray();
+    const db = await getDb();
+    if (!db) {
+      return apiError(503, "Database service temporarily unavailable");
+    }
 
-    return NextResponse.json({
+    // 3. Enforce tenant ownership - fetch ONLY reviews belonging to the authenticated user
+    const reviews = await db
+      .collection("user_reviews")
+      .find({ userId: user.id })
+      .sort({ date: -1 })
+      .project({ _id: 0, userId: 0 })
+      .toArray();
+
+    return apiSuccess({
       connected: true,
       reviews,
     });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Internal error";
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return apiError(500, "An error occurred while fetching reviews");
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const isConnected = await isMongoConnected();
+    // 1. Verify authentication server-side
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return apiError(401, "Authentication required to submit review");
+    }
 
-    if (!isConnected || !clientPromise) {
+    // 2. Prevent oversized payloads
+    if (!checkPayloadSize(req, 128 * 1024)) {
+      return apiError(413, "Payload exceeds maximum allowed size (128KB)");
+    }
+
+    // 3. Parse and validate payload using Zod
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return apiError(400, "Invalid JSON payload");
+    }
+
+    const validationResult = ReviewPayloadSchema.safeParse(body);
+    if (!validationResult.success) {
+      return apiError(400, "Validation failed", validationResult.error.format());
+    }
+
+    const validReview = validationResult.data;
+
+    // 4. Check database connectivity
+    const isConnected = await isMongoConnected();
+    if (!isConnected) {
       return NextResponse.json({
+        success: true,
         connected: false,
         savedLocally: true,
-        review: body,
+        review: validReview,
       });
     }
 
-    const client = await clientPromise;
-    const db = client.db("deen_dunya_tracker");
+    const db = await getDb();
+    if (!db) {
+      return apiError(503, "Database service temporarily unavailable");
+    }
 
-    const result = await db.collection("reviews").updateOne(
-      { date: body.date },
-      { $set: { ...body, updatedAt: new Date().toISOString() } },
+    // 5. Enforce tenant ownership - save review strictly associated with userId and date
+    const now = new Date().toISOString();
+    await db.collection("user_reviews").updateOne(
+      { userId: user.id, date: validReview.date },
+      {
+        $set: {
+          userId: user.id,
+          ...validReview,
+          updatedAt: now,
+        },
+      },
       { upsert: true }
     );
 
-    return NextResponse.json({
+    return apiSuccess({
       connected: true,
-      success: true,
-      id: result.upsertedId || body.id,
+      date: validReview.date,
+      timestamp: now,
     });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Internal error";
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return apiError(500, "An error occurred while saving review");
   }
 }

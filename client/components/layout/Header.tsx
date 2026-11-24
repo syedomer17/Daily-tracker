@@ -1,27 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
-  Clock,
-  Calendar,
   GraduationCap,
   Code2,
   Sun,
   Moon,
   Menu,
   Trophy,
+  User as UserIcon,
+  LogOut,
+  ShieldCheck,
 } from "lucide-react";
 import { useTrackerStore } from "@/lib/store";
 import { getDaysUntilJuly2027 } from "@/lib/utils";
+import { useSession, signOut } from "next-auth/react";
 import confetti from "canvas-confetti";
+import Image from "next/image";
 
 interface HeaderProps {
   onOpenMobileSidebar: () => void;
 }
 
 export function Header({ onOpenMobileSidebar }: HeaderProps) {
-  const [currentTime, setCurrentTime] = useState<Date | null>(() => new Date());
+  const { data: session } = useSession();
   const [showGoalModal, setShowGoalModal] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
 
   const dayType = useTrackerStore((s) => s.dayType);
   const toggleDayType = useTrackerStore((s) => s.toggleDayType);
@@ -30,12 +35,15 @@ export function Header({ onOpenMobileSidebar }: HeaderProps) {
   const dsaCount = useTrackerStore((s) => s.dsaCount);
   const sqlCount = useTrackerStore((s) => s.sqlCount);
 
-  // Live Clock effect
+  // Close profile dropdown on outside click
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(interval);
+    function handleClickOutside(event: MouseEvent) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const countdown = getDaysUntilJuly2027();
@@ -49,35 +57,10 @@ export function Header({ onOpenMobileSidebar }: HeaderProps) {
     });
   };
 
-  const formattedDate = currentTime
-    ? currentTime.toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-      })
-    : "Mon, Nov 23";
-
-  const formattedTimeFull = currentTime
-    ? currentTime.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true,
-      })
-    : "12:00:00 PM";
-
-  const formattedTimeCompact = currentTime
-    ? currentTime.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      })
-    : "12:00 PM";
-
   return (
     <>
       <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/90 px-3 sm:px-4 md:px-6 backdrop-blur transition-colors duration-200">
-        {/* Left Side: Mobile Menu + Date & Clock */}
+        {/* Left Side: Mobile Menu Button */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <button
             onClick={onOpenMobileSidebar}
@@ -86,23 +69,6 @@ export function Header({ onOpenMobileSidebar }: HeaderProps) {
           >
             <Menu className="h-5 w-5" />
           </button>
-
-          {/* Date & Live Clock Pill */}
-          <div className="flex items-center gap-1.5 sm:gap-2 rounded-xl border border-zinc-200 dark:border-zinc-800/90 bg-zinc-100/90 dark:bg-zinc-900/60 px-2.5 sm:px-3 py-1.5 text-xs text-zinc-700 dark:text-zinc-200 transition-colors">
-            {/* Date: Hidden on tiny screens, short on sm, full on md+ */}
-            <div className="hidden sm:flex items-center gap-1.5 font-medium text-zinc-700 dark:text-zinc-300 shrink-0">
-              <Calendar className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
-              <span>{formattedDate}</span>
-              <span className="text-zinc-300 dark:text-zinc-600">|</span>
-            </div>
-
-            {/* Time: Compact on mobile, full with seconds on md+ */}
-            <div className="flex items-center gap-1.5 font-mono text-zinc-900 dark:text-zinc-100 font-semibold tracking-wide shrink-0">
-              <Clock className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400 animate-pulse" />
-              <span className="hidden md:inline">{formattedTimeFull}</span>
-              <span className="md:hidden">{formattedTimeCompact}</span>
-            </div>
-          </div>
         </div>
 
         {/* Right Side Controls */}
@@ -142,7 +108,7 @@ export function Header({ onOpenMobileSidebar }: HeaderProps) {
             </button>
           </div>
 
-          {/* Goal Countdown Badge - Visible on all screen sizes with clear dark mode contrast */}
+          {/* Goal Countdown Badge */}
           <button
             onClick={() => {
               setShowGoalModal(true);
@@ -172,6 +138,74 @@ export function Header({ onOpenMobileSidebar }: HeaderProps) {
               <Moon className="h-4 w-4 text-blue-600" />
             )}
           </button>
+
+          {/* User Profile & Logout Popover */}
+          <div className="relative" ref={profileMenuRef}>
+            <button
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              aria-label="User profile menu"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition overflow-hidden shadow-sm"
+            >
+              {session?.user?.image ? (
+                <Image
+                  src={session.user.image}
+                  alt={session.user.name || "User avatar"}
+                  width={36}
+                  height={36}
+                  className="h-full w-full object-cover"
+                  unoptimized
+                />
+              ) : (
+                <UserIcon className="h-4 w-4 text-zinc-600 dark:text-zinc-300" />
+              )}
+            </button>
+
+            {showProfileMenu && (
+              <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-3 shadow-2xl z-50 animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center gap-3 pb-3 border-b border-zinc-100 dark:border-zinc-800">
+                  <div className="h-10 w-10 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center border border-zinc-200 dark:border-zinc-700">
+                    {session?.user?.image ? (
+                      <Image
+                        src={session.user.image}
+                        alt="Avatar"
+                        width={40}
+                        height={40}
+                        className="h-full w-full object-cover"
+                        unoptimized
+                      />
+                    ) : (
+                      <UserIcon className="h-5 w-5 text-zinc-400" />
+                    )}
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate">
+                      {session?.user?.name || "Authenticated User"}
+                    </span>
+                    <span className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
+                      {session?.user?.email || "GitHub Account"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="py-2.5 space-y-1">
+                  <div className="flex items-center gap-2 rounded-lg bg-emerald-500/10 px-2 py-1.5 text-[11px] text-emerald-700 dark:text-emerald-300 font-medium border border-emerald-500/20">
+                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                    <span>Personal Isolated Storage</span>
+                  </div>
+                </div>
+
+                <div className="pt-1 border-t border-zinc-100 dark:border-zinc-800">
+                  <button
+                    onClick={() => signOut({ callbackUrl: "/login" })}
+                    className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
