@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -12,7 +13,6 @@ import {
   BookOpenCheck,
   ChevronLeft,
   ChevronRight,
-  Compass,
   Code2,
   GraduationCap,
   LogOut,
@@ -114,13 +114,20 @@ export function Sidebar({
             onClick={onCloseMobile}
             className="flex items-center gap-3 overflow-hidden text-left"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 via-teal-500 to-blue-600 shadow-md shadow-emerald-950/30 text-white">
-              <Compass className="h-5 w-5 animate-subtle-pulse" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl overflow-hidden shadow-md shadow-emerald-950/30 border border-emerald-500/20 bg-zinc-900">
+              <Image
+                src="/apple-touch-icon.png"
+                alt="DeenSync Logo"
+                width={40}
+                height={40}
+                className="h-full w-full object-cover"
+                priority
+              />
             </div>
             {!collapsed && (
               <div className="flex flex-col truncate">
                 <span className="font-bold tracking-tight text-zinc-900 dark:text-white flex items-center gap-1.5 text-sm">
-                  Deen & Dunya
+                  DeenSync
                   <span className="rounded bg-emerald-500/20 px-1 py-0.2 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
                     Pro
                   </span>
