@@ -11,6 +11,7 @@ import {
   Milestone as MilestoneIcon,
   BarChart3,
   BookOpenCheck,
+  BookOpen,
   ChevronLeft,
   ChevronRight,
   Code2,
@@ -58,6 +59,12 @@ const NAV_ITEMS = [
     href: "/analytics",
     icon: BarChart3,
     badge: "Insights",
+  },
+  {
+    name: "Quran & Adhkar",
+    href: "/quran",
+    icon: BookOpen,
+    badge: "Auto-Time",
   },
   {
     name: "Daily Review",
