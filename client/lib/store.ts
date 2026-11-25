@@ -141,6 +141,13 @@ export interface TrackerState {
   // Review Actions
   saveDailyReview: (review: Omit<DailyReview, "id" | "createdAt">) => void;
 
+  // Quran & Adhkar Progress
+  quranProgressByDate: Record<string, Record<string, number>>;
+  incrementQuranRepetition: (targetId: string, customDate?: string) => void;
+  markQuranDone: (targetId: string, totalTarget: number, customDate?: string) => void;
+  resetQuranRepetition: (targetId: string, customDate?: string) => void;
+  getQuranProgressForDate: (date?: string) => Record<string, number>;
+
   // Simulation
   setSimulatedTime: (time: string | null) => void;
 
@@ -194,6 +201,8 @@ const DEFAULT_HABIT_FLAGS: HabitFlags = {
   healthyFoodSleep: false,
 };
 
+const EMPTY_QURAN_PROGRESS: Record<string, number> = {};
+
 function createEmptyDailyRecord(date: string, dayType: DayType): DailyRecord {
   const now = new Date().toISOString();
   return {
@@ -208,6 +217,7 @@ function createEmptyDailyRecord(date: string, dayType: DayType): DailyRecord {
     completedBlocks: {},
     salah: { ...DEFAULT_SALAH_STATUS },
     habits: { ...DEFAULT_HABIT_FLAGS },
+    quranProgress: {},
     version: 1,
     createdAt: now,
     updatedAt: now,
@@ -319,6 +329,7 @@ export const useTrackerStore = create<TrackerState>()(
         mockInterviews: 10,
       },
       dailyReviews: [],
+      quranProgressByDate: {},
 
       focusTimer: {
         activeBlockId: null,
@@ -1049,6 +1060,122 @@ export const useTrackerStore = create<TrackerState>()(
             pendingSync: true,
           };
         });
+      },
+
+      // --- Quran & Adhkar Progress ---
+      incrementQuranRepetition: (targetId, customDate) => {
+        const date = customDate || get().todayDate;
+        set((state) => {
+          const record =
+            state.dailyRecords[date] ||
+            createEmptyDailyRecord(date, state.dayTypeByDate[date] || state.dayType);
+
+          const currentMap = state.quranProgressByDate[date] || record.quranProgress || {};
+          const currentCount = currentMap[targetId] || 0;
+          const nextCount = currentCount + 1;
+          const newMap = { ...currentMap, [targetId]: nextCount };
+
+          // Automatically set quran habit to true when user engages with quran routine
+          const updatedHabits = { ...record.habits, quran: true };
+
+          const updatedRecord: DailyRecord = {
+            ...record,
+            habits: updatedHabits,
+            quranProgress: newMap,
+            version: record.version + 1,
+            updatedAt: new Date().toISOString(),
+          };
+
+          const newQuranByDate = {
+            ...state.quranProgressByDate,
+            [date]: newMap,
+          };
+
+          const baseUpdate = applyDailyRecordsUpdate(state, updatedRecord, date);
+          return {
+            ...baseUpdate,
+            quranProgressByDate: newQuranByDate,
+            pendingSync: true,
+          };
+        });
+      },
+
+      markQuranDone: (targetId, totalTarget = 1, customDate) => {
+        const date = customDate || get().todayDate;
+        set((state) => {
+          const record =
+            state.dailyRecords[date] ||
+            createEmptyDailyRecord(date, state.dayTypeByDate[date] || state.dayType);
+
+          const currentMap = state.quranProgressByDate[date] || record.quranProgress || {};
+          const isAlreadyDone = (currentMap[targetId] || 0) >= totalTarget;
+          const newCount = isAlreadyDone ? 0 : totalTarget;
+          const newMap = { ...currentMap, [targetId]: newCount };
+
+          const hasAnyQuranDone = Object.values(newMap).some((v) => v > 0);
+          const updatedHabits = { ...record.habits, quran: hasAnyQuranDone };
+
+          const updatedRecord: DailyRecord = {
+            ...record,
+            habits: updatedHabits,
+            quranProgress: newMap,
+            version: record.version + 1,
+            updatedAt: new Date().toISOString(),
+          };
+
+          const newQuranByDate = {
+            ...state.quranProgressByDate,
+            [date]: newMap,
+          };
+
+          const baseUpdate = applyDailyRecordsUpdate(state, updatedRecord, date);
+          return {
+            ...baseUpdate,
+            quranProgressByDate: newQuranByDate,
+            pendingSync: true,
+          };
+        });
+      },
+
+      resetQuranRepetition: (targetId, customDate) => {
+        const date = customDate || get().todayDate;
+        set((state) => {
+          const record =
+            state.dailyRecords[date] ||
+            createEmptyDailyRecord(date, state.dayTypeByDate[date] || state.dayType);
+
+          const currentMap = state.quranProgressByDate[date] || record.quranProgress || {};
+          const newMap = { ...currentMap, [targetId]: 0 };
+
+          const updatedRecord: DailyRecord = {
+            ...record,
+            quranProgress: newMap,
+            version: record.version + 1,
+            updatedAt: new Date().toISOString(),
+          };
+
+          const newQuranByDate = {
+            ...state.quranProgressByDate,
+            [date]: newMap,
+          };
+
+          const baseUpdate = applyDailyRecordsUpdate(state, updatedRecord, date);
+          return {
+            ...baseUpdate,
+            quranProgressByDate: newQuranByDate,
+            pendingSync: true,
+          };
+        });
+      },
+
+      getQuranProgressForDate: (date) => {
+        const state = get();
+        const d = date || state.todayDate;
+        return (
+          state.quranProgressByDate[d] ||
+          state.dailyRecords[d]?.quranProgress ||
+          EMPTY_QURAN_PROGRESS
+        );
       },
 
       // --- Simulation ---

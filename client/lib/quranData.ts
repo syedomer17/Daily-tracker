@@ -11,6 +11,12 @@ export interface SurahTarget {
   audioSurahUrl: string;
 }
 
+export const DEFAULT_RECITER = {
+  name: "Sheikh Yasser Al-Dosari",
+  arabicName: "الشيخ ياسر الدوسري",
+  id: "yasser",
+};
+
 export interface PrayerSlotConfig {
   id: "fajr" | "dhuhr" | "asr" | "maghrib" | "isha" | "friday";
   name: string;
@@ -37,7 +43,7 @@ export const QURAN_PRAYER_SLOTS: Record<string, PrayerSlotConfig> = {
         totalVerses: 110,
         revelationPlace: "Mecca",
         virtue: "Whoever reads Surah Al-Kahf on the day of Jumu'ah, will have a light that will shine from him from one Friday to the next (Al-Hakim & Al-Bayhaqi).",
-        audioSurahUrl: "https://server8.mp3quran.net/afs/018.mp3",
+        audioSurahUrl: "https://server11.mp3quran.net/yasser/018.mp3",
       },
     ],
   },
@@ -57,7 +63,7 @@ export const QURAN_PRAYER_SLOTS: Record<string, PrayerSlotConfig> = {
         totalVerses: 83,
         revelationPlace: "Mecca",
         virtue: "Known as the heart of the Quran. Recitation in the morning brings ease to affairs and divine forgiveness.",
-        audioSurahUrl: "https://server8.mp3quran.net/afs/036.mp3",
+        audioSurahUrl: "https://server11.mp3quran.net/yasser/036.mp3",
       },
       {
         id: "ikhlas_fajr",
@@ -68,7 +74,7 @@ export const QURAN_PRAYER_SLOTS: Record<string, PrayerSlotConfig> = {
         totalVerses: 4,
         revelationPlace: "Mecca",
         virtue: "Equal to one-third of the Quran. Recited 3 times in morning and evening for total protection from harm.",
-        audioSurahUrl: "https://server8.mp3quran.net/afs/112.mp3",
+        audioSurahUrl: "https://server11.mp3quran.net/yasser/112.mp3",
       },
       {
         id: "falaq_fajr",
@@ -79,7 +85,7 @@ export const QURAN_PRAYER_SLOTS: Record<string, PrayerSlotConfig> = {
         totalVerses: 5,
         revelationPlace: "Mecca",
         virtue: "Seeking refuge with the Lord of the daybreak from envy, witchcraft, and darkness.",
-        audioSurahUrl: "https://server8.mp3quran.net/afs/113.mp3",
+        audioSurahUrl: "https://server11.mp3quran.net/yasser/113.mp3",
       },
       {
         id: "nas_fajr",
@@ -90,7 +96,7 @@ export const QURAN_PRAYER_SLOTS: Record<string, PrayerSlotConfig> = {
         totalVerses: 6,
         revelationPlace: "Mecca",
         virtue: "Seeking refuge in the Lord, King, and God of mankind from the whispers of retreating whisperers.",
-        audioSurahUrl: "https://server8.mp3quran.net/afs/114.mp3",
+        audioSurahUrl: "https://server11.mp3quran.net/yasser/114.mp3",
       },
     ],
   },
@@ -111,7 +117,7 @@ export const QURAN_PRAYER_SLOTS: Record<string, PrayerSlotConfig> = {
         totalVerses: 1,
         revelationPlace: "Medina",
         virtue: "Whoever recites Ayat al-Kursi immediately after each obligatory prayer, there's nothing between him and entering Paradise except death (An-Nasa'i).",
-        audioSurahUrl: "https://server8.mp3quran.net/afs/002.mp3",
+        audioSurahUrl: "https://server11.mp3quran.net/yasser/002.mp3",
       },
       {
         id: "ikhlas_dhuhr",
@@ -122,7 +128,7 @@ export const QURAN_PRAYER_SLOTS: Record<string, PrayerSlotConfig> = {
         totalVerses: 4,
         revelationPlace: "Mecca",
         virtue: "Post-prayer Sunnah: Recited 1 time after Dhuhr, Asr, and Isha.",
-        audioSurahUrl: "https://server8.mp3quran.net/afs/112.mp3",
+        audioSurahUrl: "https://server11.mp3quran.net/yasser/112.mp3",
       },
       {
         id: "falaq_dhuhr",
@@ -133,7 +139,7 @@ export const QURAN_PRAYER_SLOTS: Record<string, PrayerSlotConfig> = {
         totalVerses: 5,
         revelationPlace: "Mecca",
         virtue: "Protection against outward evils and jealous eyes.",
-        audioSurahUrl: "https://server8.mp3quran.net/afs/113.mp3",
+        audioSurahUrl: "https://server11.mp3quran.net/yasser/113.mp3",
       },
       {
         id: "nas_dhuhr",
@@ -144,7 +150,7 @@ export const QURAN_PRAYER_SLOTS: Record<string, PrayerSlotConfig> = {
         totalVerses: 6,
         revelationPlace: "Mecca",
         virtue: "Protection against inward whispers and doubt.",
-        audioSurahUrl: "https://server8.mp3quran.net/afs/114.mp3",
+        audioSurahUrl: "https://server11.mp3quran.net/yasser/114.mp3",
       },
     ],
   },
@@ -165,7 +171,7 @@ export const QURAN_PRAYER_SLOTS: Record<string, PrayerSlotConfig> = {
         totalVerses: 1,
         revelationPlace: "Medina",
         virtue: "The greatest verse of the Holy Quran, recited after Asr prayer for divine custody and barakah.",
-        audioSurahUrl: "https://server8.mp3quran.net/afs/002.mp3",
+        audioSurahUrl: "https://server11.mp3quran.net/yasser/002.mp3",
       },
       {
         id: "ikhlas_asr",
@@ -176,7 +182,7 @@ export const QURAN_PRAYER_SLOTS: Record<string, PrayerSlotConfig> = {
         totalVerses: 4,
         revelationPlace: "Mecca",
         virtue: "Affirmation of absolute Tawheed (Oneness of Allah).",
-        audioSurahUrl: "https://server8.mp3quran.net/afs/112.mp3",
+        audioSurahUrl: "https://server11.mp3quran.net/yasser/112.mp3",
       },
       {
         id: "falaq_asr",
@@ -187,7 +193,7 @@ export const QURAN_PRAYER_SLOTS: Record<string, PrayerSlotConfig> = {
         totalVerses: 5,
         revelationPlace: "Mecca",
         virtue: "Seeking refuge with the Lord of dawn.",
-        audioSurahUrl: "https://server8.mp3quran.net/afs/113.mp3",
+        audioSurahUrl: "https://server11.mp3quran.net/yasser/113.mp3",
       },
       {
         id: "nas_asr",
@@ -198,7 +204,7 @@ export const QURAN_PRAYER_SLOTS: Record<string, PrayerSlotConfig> = {
         totalVerses: 6,
         revelationPlace: "Mecca",
         virtue: "Seeking refuge from evil whispers.",
-        audioSurahUrl: "https://server8.mp3quran.net/afs/114.mp3",
+        audioSurahUrl: "https://server11.mp3quran.net/yasser/114.mp3",
       },
     ],
   },
@@ -218,7 +224,7 @@ export const QURAN_PRAYER_SLOTS: Record<string, PrayerSlotConfig> = {
         totalVerses: 96,
         revelationPlace: "Mecca",
         virtue: "The Prophet (ﷺ) said: 'Whoever recites Surah Al-Waqi'ah every night will never be afflicted by poverty' (Ibn Kathir, Bayhaqi).",
-        audioSurahUrl: "https://server8.mp3quran.net/afs/056.mp3",
+        audioSurahUrl: "https://server11.mp3quran.net/yasser/056.mp3",
       },
       {
         id: "ikhlas_maghrib",
@@ -229,7 +235,7 @@ export const QURAN_PRAYER_SLOTS: Record<string, PrayerSlotConfig> = {
         totalVerses: 4,
         revelationPlace: "Mecca",
         virtue: "Evening protection: Recited 3 times alongside Falaq & Nas to shield until morning.",
-        audioSurahUrl: "https://server8.mp3quran.net/afs/112.mp3",
+        audioSurahUrl: "https://server11.mp3quran.net/yasser/112.mp3",
       },
       {
         id: "falaq_maghrib",
@@ -240,7 +246,7 @@ export const QURAN_PRAYER_SLOTS: Record<string, PrayerSlotConfig> = {
         totalVerses: 5,
         revelationPlace: "Mecca",
         virtue: "Evening shield against all forms of created darkness and evil.",
-        audioSurahUrl: "https://server8.mp3quran.net/afs/113.mp3",
+        audioSurahUrl: "https://server11.mp3quran.net/yasser/113.mp3",
       },
       {
         id: "nas_maghrib",
@@ -251,7 +257,7 @@ export const QURAN_PRAYER_SLOTS: Record<string, PrayerSlotConfig> = {
         totalVerses: 6,
         revelationPlace: "Mecca",
         virtue: "Shield against the whisperers from jinn and mankind during the night.",
-        audioSurahUrl: "https://server8.mp3quran.net/afs/114.mp3",
+        audioSurahUrl: "https://server11.mp3quran.net/yasser/114.mp3",
       },
     ],
   },
@@ -271,7 +277,7 @@ export const QURAN_PRAYER_SLOTS: Record<string, PrayerSlotConfig> = {
         totalVerses: 30,
         revelationPlace: "Mecca",
         virtue: "The Prophet (ﷺ) said: 'There is a chapter of 30 verses that intercedes for its companion until he is forgiven: Tabarak alladhi bi-yadihi al-Mulk' (Abu Dawood & Tirmidhi).",
-        audioSurahUrl: "https://server8.mp3quran.net/afs/067.mp3",
+        audioSurahUrl: "https://server11.mp3quran.net/yasser/067.mp3",
       },
       {
         id: "last2_baqarah",
@@ -283,7 +289,7 @@ export const QURAN_PRAYER_SLOTS: Record<string, PrayerSlotConfig> = {
         totalVerses: 2,
         revelationPlace: "Medina",
         virtue: "The Prophet (ﷺ) said: 'Whoever recites the last two verses of Surah Al-Baqarah at night, they will suffice him' (Sahih Al-Bukhari 5009).",
-        audioSurahUrl: "https://server8.mp3quran.net/afs/002.mp3",
+        audioSurahUrl: "https://server11.mp3quran.net/yasser/002.mp3",
       },
     ],
   },

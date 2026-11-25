@@ -15,11 +15,13 @@ import {
   Pause,
 } from "lucide-react";
 import confetti from "canvas-confetti";
+import { useTrackerStore } from "@/lib/store";
 import {
   QURAN_PRAYER_SLOTS,
   getAutoPrayerSlot,
   PrayerSlotConfig,
   SurahTarget,
+  DEFAULT_RECITER,
 } from "@/lib/quranData";
 
 interface ApiVerse {
@@ -36,12 +38,24 @@ export default function QuranPage() {
   const [activeSlotKey, setActiveSlotKey] = useState<string>("auto");
   const [currentTimeSlot, setCurrentTimeSlot] = useState(getAutoPrayerSlot());
   const [selectedSurahId, setSelectedSurahId] = useState<string | null>(null);
-  const [repetitions, setRepetitions] = useState<Record<string, number>>({});
   const [surahContent, setSurahContent] = useState<LoadedSurah | null>(null);
   const [loadingSurah, setLoadingSurah] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [arabicFontSize, setArabicFontSize] = useState<"md" | "lg" | "xl">("lg");
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Persistent store connection
+  const todayDate = useTrackerStore((s) => s.todayDate);
+  const quranProgressByDate = useTrackerStore((s) => s.quranProgressByDate);
+  const dailyRecords = useTrackerStore((s) => s.dailyRecords);
+  const incrementQuranRepetition = useTrackerStore((s) => s.incrementQuranRepetition);
+  const markQuranDone = useTrackerStore((s) => s.markQuranDone);
+  const resetQuranRepetition = useTrackerStore((s) => s.resetQuranRepetition);
+
+  // Saved repetitions for today's date from persistent Zustand store
+  const repetitions = useMemo(() => {
+    return quranProgressByDate[todayDate] || dailyRecords[todayDate]?.quranProgress || {};
+  }, [quranProgressByDate, dailyRecords, todayDate]);
 
   // Update auto prayer slot every minute
   useEffect(() => {
@@ -123,10 +137,9 @@ export default function QuranPage() {
   // Handle repetition counter
   const handleIncrementRepetition = (target: SurahTarget) => {
     const current = repetitions[target.id] || 0;
-    const nextVal = current + 1;
-    setRepetitions((prev) => ({ ...prev, [target.id]: nextVal }));
+    incrementQuranRepetition(target.id, todayDate);
 
-    if (nextVal === target.repetitions) {
+    if (current + 1 >= target.repetitions) {
       confetti({
         particleCount: 50,
         spread: 60,
@@ -136,8 +149,35 @@ export default function QuranPage() {
     }
   };
 
+  const handleToggleDone = (target: SurahTarget) => {
+    const current = repetitions[target.id] || 0;
+    const isCurrentlyDone = current >= target.repetitions;
+    markQuranDone(target.id, target.repetitions, todayDate);
+
+    if (!isCurrentlyDone) {
+      confetti({
+        particleCount: 60,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ["#10b981", "#34d399", "#fbbf24"],
+      });
+    }
+  };
+
   const handleResetRepetition = (id: string) => {
-    setRepetitions((prev) => ({ ...prev, [id]: 0 }));
+    resetQuranRepetition(id, todayDate);
+  };
+
+  const handleMarkAllRoutineDone = () => {
+    activeConfig.targets.forEach((target) => {
+      markQuranDone(target.id, target.repetitions, todayDate);
+    });
+    confetti({
+      particleCount: 80,
+      spread: 90,
+      origin: { y: 0.5 },
+      colors: ["#10b981", "#34d399", "#38bdf8", "#fbbf24"],
+    });
   };
 
   // Audio playback toggle
@@ -294,9 +334,18 @@ export default function QuranPage() {
             <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
               Prescribed for this Routine
             </h3>
-            <span className="text-xs text-zinc-400">
-              {activeConfig.targets.length} {activeConfig.targets.length === 1 ? "Item" : "Items"}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                {activeConfig.targets.filter((t) => (repetitions[t.id] || 0) >= t.repetitions).length}/
+                {activeConfig.targets.length} Done
+              </span>
+              <button
+                onClick={handleMarkAllRoutineDone}
+                className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+              >
+                Mark All
+              </button>
+            </div>
           </div>
 
           <div className="space-y-2.5">
@@ -349,25 +398,31 @@ export default function QuranPage() {
                     </div>
 
                     <div className="flex items-center gap-1.5">
+                      {target.repetitions > 1 && !isDone && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleIncrementRepetition(target);
+                          }}
+                          className="px-2 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-emerald-500 hover:text-white"
+                        >
+                          +1
+                        </button>
+                      )}
+
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleIncrementRepetition(target);
+                          handleToggleDone(target);
                         }}
                         className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 ${
                           isDone
-                            ? "bg-emerald-500 text-white"
-                            : "bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-emerald-500 hover:text-white"
+                            ? "bg-emerald-500 text-white shadow-sm"
+                            : "bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500 hover:text-white"
                         }`}
                       >
-                        {isDone ? (
-                          <>
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            Done
-                          </>
-                        ) : (
-                          <>+1 Tap</>
-                        )}
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        {isDone ? "Done" : "Mark Done"}
                       </button>
 
                       {count > 0 && (
@@ -418,6 +473,23 @@ export default function QuranPage() {
 
                 {/* Controls: Audio Player & Font Resizer */}
                 <div className="flex items-center gap-2">
+                  {/* Mark as Done in Reader Header */}
+                  <button
+                    onClick={() => handleToggleDone(activeSurah)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition border ${
+                      (repetitions[activeSurah.id] || 0) >= activeSurah.repetitions
+                        ? "bg-emerald-500 text-white border-emerald-500 shadow-sm"
+                        : "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500 hover:text-white"
+                    }`}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <span>
+                      {(repetitions[activeSurah.id] || 0) >= activeSurah.repetitions
+                        ? "Done"
+                        : "Mark as Done"}
+                    </span>
+                  </button>
+
                   {/* Audio Element */}
                   <audio
                     ref={audioRef}
@@ -436,12 +508,12 @@ export default function QuranPage() {
                     {isPlayingAudio ? (
                       <>
                         <Pause className="h-3.5 w-3.5" />
-                        <span>Pause</span>
+                        <span>Pause ({DEFAULT_RECITER.name})</span>
                       </>
                     ) : (
                       <>
                         <Play className="h-3.5 w-3.5 fill-current" />
-                        <span>Recitation</span>
+                        <span>Recitation ({DEFAULT_RECITER.name})</span>
                       </>
                     )}
                   </button>

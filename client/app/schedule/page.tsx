@@ -35,7 +35,8 @@ export default function SchedulePage() {
 
   const collegeTimetable = useTrackerStore((s) => s.collegeTimetable);
   const noCollegeTimetable = useTrackerStore((s) => s.noCollegeTimetable);
-  const getEffectiveDayType = useTrackerStore((s) => s.getEffectiveDayType);
+  const dayType = useTrackerStore((s) => s.dayType);
+  const dayTypeByDate = useTrackerStore((s) => s.dayTypeByDate);
   const setDayTypeForDate = useTrackerStore((s) => s.setDayTypeForDate);
   const toggleBlockCompletion = useTrackerStore((s) => s.toggleBlockCompletion);
   const addTimeBlock = useTrackerStore((s) => s.addTimeBlock);
@@ -43,10 +44,13 @@ export default function SchedulePage() {
   const deleteTimeBlock = useTrackerStore((s) => s.deleteTimeBlock);
   const resetTimetable = useTrackerStore((s) => s.resetTimetable);
   const startFocusTimer = useTrackerStore((s) => s.startFocusTimer);
+  const dailyRecords = useTrackerStore((s) => s.dailyRecords);
   const getDailyRecord = useTrackerStore((s) => s.getDailyRecord);
 
-  const activeDayType = getEffectiveDayType(selectedDate);
-  const currentRecord = getDailyRecord(selectedDate);
+  const activeDayType = dayTypeByDate[selectedDate] || dayType;
+  const currentRecord = useMemo(() => {
+    return dailyRecords[selectedDate] || getDailyRecord(selectedDate);
+  }, [dailyRecords, selectedDate, getDailyRecord]);
 
   const timetable = useMemo(
     () => (activeDayType === "college" ? collegeTimetable : noCollegeTimetable),

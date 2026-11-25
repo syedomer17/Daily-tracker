@@ -75,8 +75,11 @@ export default function HabitsPage() {
   const salahRecords = useTrackerStore((s) => s.salahRecords);
 
   const todayStr = getTodayDateString();
+  const dailyRecords = useTrackerStore((s) => s.dailyRecords);
   const getDailyRecord = useTrackerStore((s) => s.getDailyRecord);
-  const todayRecord = getDailyRecord(todayStr);
+  const todayRecord = useMemo(() => {
+    return dailyRecords[todayStr] || getDailyRecord(todayStr);
+  }, [dailyRecords, todayStr, getDailyRecord]);
   const [selectedDayLog, setSelectedDayLog] = useState<HabitLog | null>(null);
 
   // Real, accurate streak calculated from activity history

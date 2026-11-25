@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Code2, Database, Plus, Minus, ListPlus, ExternalLink, Trash2, X } from "lucide-react";
 import { useTrackerStore } from "@/lib/store";
 import confetti from "canvas-confetti";
@@ -16,6 +16,7 @@ export function QuickCounters() {
   const decrementSql = useTrackerStore((s) => s.decrementSql);
   const deleteSqlEntry = useTrackerStore((s) => s.deleteSqlEntry);
 
+  const dailyRecords = useTrackerStore((s) => s.dailyRecords);
   const getDailyRecord = useTrackerStore((s) => s.getDailyRecord);
   const getLifetimeDsaCount = useTrackerStore((s) => s.getLifetimeDsaCount);
   const getWeeklyDsaCount = useTrackerStore((s) => s.getWeeklyDsaCount);
@@ -24,7 +25,9 @@ export function QuickCounters() {
   const getWeeklySqlCount = useTrackerStore((s) => s.getWeeklySqlCount);
   const getMonthlySqlCount = useTrackerStore((s) => s.getMonthlySqlCount);
 
-  const todayRecord = getDailyRecord(todayDate);
+  const todayRecord = useMemo(() => {
+    return dailyRecords[todayDate] || getDailyRecord(todayDate);
+  }, [dailyRecords, todayDate, getDailyRecord]);
   const lifetimeDsa = getLifetimeDsaCount();
   const weeklyDsa = getWeeklyDsaCount();
   const monthlyDsa = getMonthlyDsaCount();

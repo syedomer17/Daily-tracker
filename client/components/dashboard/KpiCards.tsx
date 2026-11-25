@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { CheckCircle2, Flame, Brain } from "lucide-react";
 import { useTrackerStore } from "@/lib/store";
 import { SalahName, SalahStatus } from "@/types";
@@ -29,9 +30,12 @@ export function KpiCards() {
   const toggleSalah = useTrackerStore((s) => s.toggleSalah);
   const addDeepWorkMinutes = useTrackerStore((s) => s.addDeepWorkMinutes);
   const getCurrentStreak = useTrackerStore((s) => s.getCurrentStreak);
+  const dailyRecords = useTrackerStore((s) => s.dailyRecords);
   const getDailyRecord = useTrackerStore((s) => s.getDailyRecord);
 
-  const dailyRecord = getDailyRecord(todayDate);
+  const dailyRecord = useMemo(() => {
+    return dailyRecords[todayDate] || getDailyRecord(todayDate);
+  }, [dailyRecords, todayDate, getDailyRecord]);
   const completionPercent = getCompletionPercentage(todayDate);
   const salahRecords = getSalahForDate(todayDate) || EMPTY_SALAH;
 

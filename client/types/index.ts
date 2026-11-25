@@ -76,6 +76,7 @@ export interface DailyRecord {
   completedBlocks: Record<string, boolean>; // key: blockId
   salah: SalahStatus;
   habits: HabitFlags;
+  quranProgress?: Record<string, number>; // key: targetId -> count completed
   notes?: string;
   version: number;
   createdAt: string;

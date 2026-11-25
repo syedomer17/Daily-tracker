@@ -94,6 +94,7 @@ export const DailyRecordSchema = z.object({
   completedBlocks: z.record(z.string(), z.boolean()),
   salah: DailySalahSchema,
   habits: HabitFlagsSchema,
+  quranProgress: z.record(z.string(), z.number().int().min(0)).optional(),
   notes: z.string().max(5000).optional(),
   version: z.number().int().min(0).default(1),
   createdAt: z.string().optional(),
